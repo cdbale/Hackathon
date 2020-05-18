@@ -1,0 +1,362 @@
+---
+title: "South Korea Patient Data"
+author: "Cameron Bale"
+date: "5/7/2020"
+output: html_document
+---
+
+https://en.wikipedia.org/wiki/Decimal_degrees
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(fig.width = 10,
+                      fig.height = 8)
+```
+
+Install and load packages.
+```{r}
+#install.packages('tidyverse')
+#install.packages('patchwork')
+library(rstudioapi)
+library(tidyverse)
+library(patchwork)
+```
+
+Read in the data.
+
+See data description here: https://www.kaggle.com/kimjihoo/ds4c-what-is-this-dataset-detailed-description.
+Total data includes:
+  - Case.csv: Data of COVID-19 infection cases in South Korea
+  - PatientInfo.csv: Epidemiological data of COVID-19 patients in South Korea
+  - PatientRoute.csv: Route data of COVID-19 patients in South Korea
+  - Time.csv: Time series data of COVID-19 status in South Korea
+  - TimeAge.csv: Time series of COVID-19 status in terms of the age in South Korea
+  - TimeGender.csv: Time series data of COVID-19 status in terms of gender in South Korea
+  - TimeProvince.csv: Time series data of COVID-19 status in terms of the province in South Korea
+  - Region.csv: Location and statistical data of the regions in South Korea
+  - Weather.csv: Data of the weather in the regions of South Korea
+  - SearchTrend: Trend data of the keywords searched in NAVER which is one of the largest portals in South Korea
+  - SeoulFloating: Data of floating population in Seoul, South Korea
+  - Policy: Data of the government policy for COVID-19 in South Korea
+  
+Load the cleaned patient information and route data file `korean_data_clean.RData`.
+```{r}
+# get working directory of current file
+wd <- dirname(getSourceEditorContext()$path)
+# set path to data directory
+ptd <- paste0(wd, '/../data/South_Korea/')
+#load data
+load(file = paste0(ptd, 'korean_data_clean.RData'))
+```
+
+Create data consisting of `patient_id` and location trajectories only for individuals with at least 5 observed location points.
+```{r}
+# obtain patient id and location variables only for individuals with at least 5 location data points
+trajectories <- full %>%
+  select(patient_id, latitude, longitude) %>%
+  drop_na() %>%
+  group_by(patient_id) %>%
+  filter(n() > 4)
+```
+
+Create function for determining the percentage of unique trajectories in data `trajectory_data` based on a random sample of points of size `num_points` from each trajectory. (Assumes `patient_id` is the identifier, and the only other columns are `latitude` and `longitude`). Specify the number of times `nits` you want to randomly sample points from each trajectory and calculate uniqueness.
+```{r}
+trajectory_uniqueness <- function(trajectory_data, num_points, nits = 1)
+{
+  split_trajectories <- trajectory_data %>% 
+    group_by(patient_id) %>%
+    group_split(keep = FALSE)
+  
+  ntrajectories <- length(split_trajectories)
+  
+  return(replicate(n = nits, length(unique(lapply(split_trajectories, function(x) sample_n(x, size = num_points))))/ntrajectories))
+}
+```
+
+Calculate the percentage of unique trajectories for point sample sizes 1 - 5 for 100 iterations each size. Save percentages for later access.
+```{r}
+up_5d <- sapply(1:5, function(x) trajectory_uniqueness(trajectories, num_points = x, nits = 10))
+save(up_5d, file = paste0(ptd, 'pct_unique_5d.RData'))
+#load(paste0(ptd, 'pct_unique_5d.RData'))
+```
+
+Create function to extract the results from the iterations from the matrix of percentages for a given number of points.
+```{r}
+extract_percentages <- function(percentage_matrix, num_points)
+{
+  return(enframe(percentage_matrix[,num_points], name = 'iteration', value = 'percent_unique'))
+}
+
+p1_5d <- extract_percentages(up_5d, 1)
+p2_5d <- extract_percentages(up_5d, 2)
+p3_5d <- extract_percentages(up_5d, 3)
+p4_5d <- extract_percentages(up_5d, 4)
+p5_5d <- extract_percentages(up_5d, 5)
+```
+
+Plot histograms of percentage of unique trajectories for different sizes of point samples.
+```{r message = FALSE}
+percentage_plot <- function(percentage_data, num_points_title)
+{
+  p <- percentage_data %>%
+    ggplot(aes(x = percent_unique)) +
+    geom_histogram() +
+    labs(x = num_points_title)
+  
+  return(p)
+}
+
+pl1_5d <- percentage_plot(p1_5d, 'One Point')
+
+pl2_5d <- percentage_plot(p2_5d, 'Two Points')
+
+pl3_5d <- percentage_plot(p3_5d, 'Three Points')
+
+pl4_5d <- percentage_plot(p4_5d, 'Four Points')
+
+pl5_5d <- percentage_plot(p5_5d, 'Five Points')
+
+patchwork_5d <- (pl1_5d + pl2_5d)/(pl3_5d + pl4_5d + pl5_5d)
+
+patchwork_5d + plot_annotation(
+  title = 'Percentage of Unique Trajectories for Point Sample Sizes 1 - 5 at Five Decimals',
+)
+```
+
+Now examine the effects on trajectory uniqueness of rounding latitude and longitude. In this data, latitude has 5 decimal places and longitude has four. A change of .00001 represents a distance of .4 - 1.1 meters depending on distance from the equator. This is the minimum we would change a distance point in one direction by rounding.
+Start by rounding latitude so that latitude and longitude are at the same specificity, four decimals, and remeasuring uniqueness.
+```{r message = FALSE}
+trajectories_4d <- trajectories %>%
+  mutate(latitude = round(latitude, digits = 4))
+
+up_4d <- sapply(1:5, function(x) trajectory_uniqueness(trajectories_4d, num_points = x, nits = 10))
+save(up_4d, file = paste0(ptd, 'pct_unique_4d.RData'))
+#load(paste0(ptd, 'pct_unique_4d.RData'))
+
+p1_4d <- extract_percentages(up_4d, 1)
+p2_4d <- extract_percentages(up_4d, 2)
+p3_4d <- extract_percentages(up_4d, 3)
+p4_4d <- extract_percentages(up_4d, 4)
+p5_4d <- extract_percentages(up_4d, 5)
+
+pl1_4d <- percentage_plot(p1_4d, 'One Point')
+
+pl2_4d <- percentage_plot(p2_4d, 'Two Points')
+
+pl3_4d <- percentage_plot(p3_4d, 'Three Points')
+
+pl4_4d <- percentage_plot(p4_4d, 'Four Points')
+
+pl5_4d <- percentage_plot(p5_4d, 'Five Points')
+
+patchwork_4d <- (pl1_4d + pl2_4d)/(pl3_4d + pl4_4d + pl5_4d)
+
+patchwork_4d + plot_annotation(
+  title = 'Percentage of Unique Trajectories for Point Sample Sizes 1 - 5 at Four Decimals',
+)
+```
+
+Repeat for rounding to three decimals for Lat/Long. Rounding from four decimals to three decimals is equivalent to a minimum change of 4.3 - 11.132 meters depending on distance from the equator.
+```{r message = FALSE}
+trajectories_3d <- trajectories %>%
+  mutate(latitude = round(latitude, digits = 3),
+         longitude = round(longitude, digits = 3))
+
+up_3d <- sapply(1:5, function(x) trajectory_uniqueness(trajectories_3d, num_points = x, nits = 10))
+save(up_3d, file = paste0(ptd, 'pct_unique_3d.RData'))
+#load(paste0(ptd, 'pct_unique_3d.RData'))
+
+p1_3d <- extract_percentages(up_3d, 1)
+p2_3d <- extract_percentages(up_3d, 2)
+p3_3d <- extract_percentages(up_3d, 3)
+p4_3d <- extract_percentages(up_3d, 4)
+p5_3d <- extract_percentages(up_3d, 5)
+
+pl1_3d <- percentage_plot(p1_3d, 'One Point')
+
+pl2_3d <- percentage_plot(p2_3d, 'Two Points')
+
+pl3_3d <- percentage_plot(p3_3d, 'Three Points')
+
+pl4_3d <- percentage_plot(p4_3d, 'Four Points')
+
+pl5_3d <- percentage_plot(p5_3d, 'Five Points')
+
+patchwork_3d <- (pl1_3d + pl2_3d)/(pl3_3d + pl4_3d + pl5_3d)
+
+patchwork_3d + plot_annotation(
+  title = 'Percentage of Unique Trajectories for Point Sample Sizes 1 - 5 at Three Decimals',
+)
+```
+
+Repeat for rounding to two decimals lat and long. Rounding from three decimals to two decimals is equivalent to a minimum change of 43.5 - 111.3 meters depending on distance from the equator.
+```{r message = FALSE}
+trajectories_2d <- trajectories %>%
+  mutate(latitude = round(latitude, digits = 2),
+         longitude = round(longitude, digits = 2))
+
+up_2d <- sapply(1:5, function(x) trajectory_uniqueness(trajectories_2d, num_points = x, nits = 10))
+save(up_2d, file = paste0(ptd, 'pct_unique_2d.RData'))
+#load(paste0(ptd, 'pct_unique_2d.RData'))
+
+p1_2d <- extract_percentages(up_2d, 1)
+p2_2d <- extract_percentages(up_2d, 2)
+p3_2d <- extract_percentages(up_2d, 3)
+p4_2d <- extract_percentages(up_2d, 4)
+p5_2d <- extract_percentages(up_2d, 5)
+
+pl1_2d <- percentage_plot(p1_2d, 'One Point')
+
+pl2_2d <- percentage_plot(p2_2d, 'Two Points')
+
+pl3_2d <- percentage_plot(p3_2d, 'Three Points')
+
+pl4_2d <- percentage_plot(p4_2d, 'Four Points')
+
+pl5_2d <- percentage_plot(p5_2d, 'Five Points')
+
+patchwork_2d <- (pl1_2d + pl2_2d)/(pl3_2d + pl4_2d + pl5_2d)
+
+patchwork_2d + plot_annotation(
+  title = 'Percentage of Unique Trajectories for Point Sample Sizes 1 - 5 at Two Decimals',
+)
+```
+
+Repeat for rounding to one decimal lat and long. Rounding from two decimals to one decimal is equivalent to a minimum change of 434 meters - 1.1 km depending on distance from the equator.
+```{r message = FALSE}
+trajectories_1d <- trajectories %>%
+  mutate(latitude = round(latitude, digits = 1),
+         longitude = round(longitude, digits = 1))
+
+up_1d <- sapply(1:5, function(x) trajectory_uniqueness(trajectories_1d, num_points = x, nits = 10))
+save(up_1d, file = paste0(ptd, 'pct_unique_1d.RData'))
+#load(paste0(ptd, 'pct_unique_1d.RData'))
+
+p1_1d <- extract_percentages(up_1d, 1)
+p2_1d <- extract_percentages(up_1d, 2)
+p3_1d <- extract_percentages(up_1d, 3)
+p4_1d <- extract_percentages(up_1d, 4)
+p5_1d <- extract_percentages(up_1d, 5)
+
+pl1_1d <- percentage_plot(p1_1d, 'One Point')
+
+pl2_1d <- percentage_plot(p2_1d, 'Two Points')
+
+pl3_1d <- percentage_plot(p3_1d, 'Three Points')
+
+pl4_1d <- percentage_plot(p4_1d, 'Four Points')
+
+pl5_1d <- percentage_plot(p5_1d, 'Five Points')
+
+patchwork_1d <- (pl1_1d + pl2_1d)/(pl3_1d + pl4_1d + pl5_1d)
+
+patchwork_1d + plot_annotation(
+  title = 'Percentage of Unique Trajectories for Point Sample Sizes 1 - 5 at One Decimal',
+)
+```
+
+Repeat for rounding to zero decimal lat and long. Rounding from one decimals to zero decimals is equivalent to a minimum change of 4.3 - 11 km depending on distance from the equator.
+```{r message = FALSE}
+trajectories_0d <- trajectories %>%
+  mutate(latitude = round(latitude, digits = 0),
+         longitude = round(longitude, digits = 0))
+
+up_0d <- sapply(1:5, function(x) trajectory_uniqueness(trajectories_0d, num_points = x, nits = 10))
+save(up_0d, file = paste0(ptd, 'pct_unique_0d.RData'))
+#load(paste0(ptd, 'pct_unique_0d.RData'))
+
+p1_0d <- extract_percentages(up_0d, 1)
+p2_0d <- extract_percentages(up_0d, 2)
+p3_0d <- extract_percentages(up_0d, 3)
+p4_0d <- extract_percentages(up_0d, 4)
+p5_0d <- extract_percentages(up_0d, 5)
+
+pl1_0d <- percentage_plot(p1_0d, 'One Point')
+
+pl2_0d <- percentage_plot(p2_0d, 'Two Points')
+
+pl3_0d <- percentage_plot(p3_0d, 'Three Points')
+
+pl4_0d <- percentage_plot(p4_0d, 'Four Points')
+
+pl5_0d <- percentage_plot(p5_0d, 'Five Points')
+
+patchwork_0d <- (pl1_0d + pl2_0d)/(pl3_0d + pl4_0d + pl5_0d)
+
+patchwork_0d + plot_annotation(
+  title = 'Percentage of Unique Trajectories for Point Sample Sizes 1 - 5 at Zero Decimals',
+)
+```
+
+Plot results together.
+```{r message = FALSE}
+colnames(up_0d) <- c('one', 'two', 'three', 'four', 'five')
+colnames(up_1d) <- c('one', 'two', 'three', 'four', 'five')
+colnames(up_2d) <- c('one', 'two', 'three', 'four', 'five')
+colnames(up_3d) <- c('one', 'two', 'three', 'four', 'five')
+colnames(up_4d) <- c('one', 'two', 'three', 'four', 'five')
+colnames(up_5d) <- c('one', 'two', 'three', 'four', 'five')
+
+m_to_t <- function(p_mat, num_decimals)
+{
+  return(
+    as_tibble(p_mat) %>%
+      mutate(num_dec = num_decimals) %>%
+      gather(key = 'num_points', value = 'percent_unique', -num_dec)
+  )
+}
+
+full_pd <- m_to_t(up_0d, 0) %>%
+  bind_rows(m_to_t(up_1d, 1)) %>%
+  bind_rows(m_to_t(up_2d, 2)) %>%
+  bind_rows(m_to_t(up_3d, 3)) %>%
+  bind_rows(m_to_t(up_4d, 4)) %>%
+  bind_rows(m_to_t(up_5d, 5))
+
+full_pd$num_points <- with(full_pd, reorder(num_points, percent_unique))
+
+h_plot <- function(tidy_data, number_dec) 
+{
+  return(
+    tidy_data %>%
+      filter(num_dec == number_dec) %>%
+      ggplot(aes(x = percent_unique)) +
+      geom_density(aes(fill = factor(num_points)), alpha = 0.8)
+  )
+}
+
+h5 <- h_plot(full_pd, 5)
+h4 <- h_plot(full_pd, 4)
+h3 <- h_plot(full_pd, 3)
+h2 <- h_plot(full_pd, 2)
+h1 <- h_plot(full_pd, 1)
+h0 <- h_plot(full_pd, 0)
+
+patch_h <- h5/h4/h3/h2/h1/h0
+
+patch_h
+
+full_pd %>%
+  ggplot(aes(y = factor(num_dec))) +
+  geom_density_ridges(
+    aes(x = percent_unique, fill = factor(num_points)),
+    alpha = .8, color = 'white', from = 0, to = 1
+  ) +
+  scale_y_discrete() +
+  scale_x_continuous()
+```
+
+```{r}
+full_pd %>%
+  ggplot(aes(x = factor(num_dec), y = percent_unique, fill = factor(num_points))) +
+  geom_boxplot() +
+  labs(x = 'Number Decimal Places (Lat/Long)',
+       y = '% Unique Trajectories',
+       fill = '# Lat/Long Points\n',
+       title = 'Uniqueness for Varying Trajectory Sample Size and Location Specificity For COVID-19 Patients') +
+  scale_y_continuous(breaks = 0.1 * 0:10, labels = seq(0, 100, 10)) +
+  scale_fill_discrete(labels = c('One', 'Two', 'Three', 'Four', 'Five'),
+                      guide = guide_legend(reverse = TRUE))
+```
+
+
+
