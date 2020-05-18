@@ -25,21 +25,16 @@
 # load libraries
 library(tidyverse)
 
-# get working directory
-wd <- dirname(rstudioapi::getSourceEditorContext()$path)
-# set path to data directory
-ptd <- paste0(wd, '/../data/South_Korea/')
-
 # Read in patient epidemiological information and route information.
-p_info <- read_csv(file = paste0(ptd, 'PatientInfo.csv'))
-p_route <- read_csv(file = paste0(ptd, 'PatientRoute.csv'))
+p_info <- read_csv(file = 'Data/PatientInfo.csv')
+p_route <- read_csv(file = 'Data/PatientRoute.csv')
 
 # merge data sets (join epidemiological variables to route information)
 full <- p_route %>%
   left_join(p_info, by = c('patient_id', 'global_num', 'province', 'city')) %>%
   mutate_at(c('patient_id', 'infected_by'), as.character) # convert ID variables from numeric to characters
 
-save(full, file = paste0(ptd, 'korean_data_clean.RData'))
+save(full, file = 'Data/korea_data_clean.RData')
 
 ################################
 ### Basic Summary Statistics ###

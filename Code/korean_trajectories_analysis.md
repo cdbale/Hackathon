@@ -1,40 +1,43 @@
----
-title: "South Korea Patient Data"
-author: "Cameron Bale"
-date: "5/7/2020"
-output: github_document
----
+South Korea Patient Data
+================
+Cameron Bale
+5/7/2020
 
-https://en.wikipedia.org/wiki/Decimal_degrees
+<https://en.wikipedia.org/wiki/Decimal_degrees>
 
-```{r setup, include = FALSE}
-knitr::opts_chunk$set(fig.width = 10,
-                      fig.height = 8)
-```
+Install and load packages. We use the `tidyverse` package for data
+manipulation and visualization, and the `patchwork` package displaying
+multiple plots in one.
 
-Install and load packages. We use the `tidyverse` package for data manipulation and visualization, and the `patchwork` package displaying multiple plots in one.
-```{r message = FALSE}
+``` r
 #install.packages('tidyverse')
 #install.packages('patchwork')
 library(tidyverse)
 library(patchwork)
 ```
 
-See data description [here.](https://www.kaggle.com/kimjihoo/ds4c-what-is-this-dataset-detailed-description)
+See data description
+[here.](https://www.kaggle.com/kimjihoo/ds4c-what-is-this-dataset-detailed-description)
 
 <br>
 
-File `korea_covid_clean.RData` was created using the `korea_data_cleaning.R` [script.](https://github.com/cdbale/Hackathon/blob/master/Code/korea_data_cleaning.R)
+File `korea_covid_clean.RData` was created using the
+`korea_data_cleaning.R`
+[script.](https://github.com/cdbale/Hackathon/blob/master/Code/korea_data_cleaning.R)
 
 <br>
-  
+
 Load the cleaned patient information and routes data.
-```{r}
+
+``` r
 load(file = "../Data/korea_data_clean.RData")
 ```
 
-Create data consisting of `patient_id` and location trajectories (`latitude`/`longitude`) only for individuals with at least 5 observed location points.
-```{r}
+Create data consisting of `patient_id` and location trajectories
+(`latitude`/`longitude`) only for individuals with at least 5 observed
+location points.
+
+``` r
 trajectories <- full %>%
   select(patient_id, latitude, longitude) %>%
   drop_na() %>%
@@ -42,8 +45,14 @@ trajectories <- full %>%
   filter(n() > 4)
 ```
 
-Create function for determining the percentage of unique trajectories in data `trajectory_data` based on a random sample of points of size `num_points` from each trajectory. (Assumes `patient_id` is a uniquely identifies individuals, and the only other columns are `latitude` and `longitude`). Specify the number of times `nits` you want to randomly sample points from each trajectory and calculate uniqueness.
-```{r}
+Create function for determining the percentage of unique trajectories in
+data `trajectory_data` based on a random sample of points of size
+`num_points` from each trajectory. (Assumes `patient_id` is a uniquely
+identifies individuals, and the only other columns are `latitude` and
+`longitude`). Specify the number of times `nits` you want to randomly
+sample points from each trajectory and calculate uniqueness.
+
+``` r
 trajectory_uniqueness <- function(trajectory_data, num_points, nits = 1)
 {
   split_trajectories <- trajectory_data %>% 
@@ -57,15 +66,21 @@ trajectory_uniqueness <- function(trajectory_data, num_points, nits = 1)
 }
 ```
 
-Calculate the percentage of unique trajectories for point sample sizes of 1 - 5 for 100 iterations each size. Save percentages for later access.
-```{r}
+Calculate the percentage of unique trajectories for point sample sizes
+of 1 - 5 for 100 iterations each size. Save percentages for later
+access.
+
+``` r
 up_5d <- sapply(1:5, function(x) trajectory_uniqueness(trajectories, num_points = x, nits = 2))
 save(up_5d, file = '../Data/pct_unique_5d.RData')
 #load('pct_unique_5d.RData')
 ```
 
-Create function to extract the results of `trajectory_uniqueness` for a specified number of points. We use this custom function so that the data is extracted to a `tibble` for use in the `ggplot()` function later.
-```{r}
+Create function to extract the results of `trajectory_uniqueness` for a
+specified number of points. We use this custom function so that the data
+is extracted to a `tibble` for use in the `ggplot()` function later.
+
+``` r
 extract_percentages <- function(percentage_matrix, num_points)
 {
   return(enframe(percentage_matrix[,num_points], name = 'iteration', value = 'percent_unique'))
@@ -78,8 +93,10 @@ p4_5d <- extract_percentages(up_5d, 4)
 p5_5d <- extract_percentages(up_5d, 5)
 ```
 
-Plot histograms of percentage of unique trajectories for different sizes of point samples.
-```{r message = FALSE}
+Plot histograms of percentage of unique trajectories for different sizes
+of point samples.
+
+``` r
 percentage_plot <- function(percentage_data, num_points_title)
 {
   p <- percentage_data %>%
@@ -107,9 +124,17 @@ patchwork_5d + plot_annotation(
 )
 ```
 
-Now examine the effects on trajectory uniqueness of rounding latitude and longitude. In this data, latitude has 5 decimal places and longitude has four. A change of .00001 represents a distance of .4 - 1.1 meters depending on distance from the equator. This is the minimum we would change a distance point in one direction by rounding.
-Start by rounding latitude so that latitude and longitude are at the same specificity, four decimals, and remeasuring uniqueness.
-```{r message = FALSE}
+![](korean_trajectories_analysis_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
+
+Now examine the effects on trajectory uniqueness of rounding latitude
+and longitude. In this data, latitude has 5 decimal places and longitude
+has four. A change of .00001 represents a distance of .4 - 1.1 meters
+depending on distance from the equator. This is the minimum we would
+change a distance point in one direction by rounding. Start by rounding
+latitude so that latitude and longitude are at the same specificity,
+four decimals, and remeasuring uniqueness.
+
+``` r
 trajectories_4d <- trajectories %>%
   mutate(latitude = round(latitude, digits = 4))
 
@@ -140,8 +165,13 @@ patchwork_4d + plot_annotation(
 )
 ```
 
-Repeat for rounding to three decimals for Lat/Long. Rounding from four decimals to three decimals is equivalent to a minimum change of 4.3 - 11.132 meters depending on distance from the equator.
-```{r message = FALSE}
+![](korean_trajectories_analysis_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
+
+Repeat for rounding to three decimals for Lat/Long. Rounding from four
+decimals to three decimals is equivalent to a minimum change of 4.3 -
+11.132 meters depending on distance from the equator.
+
+``` r
 trajectories_3d <- trajectories %>%
   mutate(latitude = round(latitude, digits = 3),
          longitude = round(longitude, digits = 3))
@@ -173,8 +203,13 @@ patchwork_3d + plot_annotation(
 )
 ```
 
-Repeat for rounding to two decimals lat and long. Rounding from three decimals to two decimals is equivalent to a minimum change of 43.5 - 111.3 meters depending on distance from the equator.
-```{r message = FALSE}
+![](korean_trajectories_analysis_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
+
+Repeat for rounding to two decimals lat and long. Rounding from three
+decimals to two decimals is equivalent to a minimum change of 43.5 -
+111.3 meters depending on distance from the equator.
+
+``` r
 trajectories_2d <- trajectories %>%
   mutate(latitude = round(latitude, digits = 2),
          longitude = round(longitude, digits = 2))
@@ -206,8 +241,13 @@ patchwork_2d + plot_annotation(
 )
 ```
 
-Repeat for rounding to one decimal lat and long. Rounding from two decimals to one decimal is equivalent to a minimum change of 434 meters - 1.1 km depending on distance from the equator.
-```{r message = FALSE}
+![](korean_trajectories_analysis_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
+
+Repeat for rounding to one decimal lat and long. Rounding from two
+decimals to one decimal is equivalent to a minimum change of 434 meters
+- 1.1 km depending on distance from the equator.
+
+``` r
 trajectories_1d <- trajectories %>%
   mutate(latitude = round(latitude, digits = 1),
          longitude = round(longitude, digits = 1))
@@ -239,8 +279,13 @@ patchwork_1d + plot_annotation(
 )
 ```
 
-Repeat for rounding to zero decimal lat and long. Rounding from one decimals to zero decimals is equivalent to a minimum change of 4.3 - 11 km depending on distance from the equator.
-```{r message = FALSE}
+![](korean_trajectories_analysis_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
+
+Repeat for rounding to zero decimal lat and long. Rounding from one
+decimals to zero decimals is equivalent to a minimum change of 4.3 - 11
+km depending on distance from the equator.
+
+``` r
 trajectories_0d <- trajectories %>%
   mutate(latitude = round(latitude, digits = 0),
          longitude = round(longitude, digits = 0))
@@ -272,7 +317,9 @@ patchwork_0d + plot_annotation(
 )
 ```
 
-```{r}
+![](korean_trajectories_analysis_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
+
+``` r
 colnames(up_0d) <- c('one', 'two', 'three', 'four', 'five')
 colnames(up_1d) <- c('one', 'two', 'three', 'four', 'five')
 colnames(up_2d) <- c('one', 'two', 'three', 'four', 'five')
@@ -308,5 +355,4 @@ full_pd %>%
                       guide = guide_legend(reverse = TRUE))
 ```
 
-
-
+![](korean_trajectories_analysis_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
