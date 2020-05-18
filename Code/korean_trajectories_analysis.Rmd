@@ -40,12 +40,7 @@ Total data includes:
   
 Load the cleaned patient information and route data file `korean_data_clean.RData`.
 ```{r}
-# get working directory of current file
-wd <- dirname(getSourceEditorContext()$path)
-# set path to data directory
-ptd <- paste0(wd, '/../data/South_Korea/')
-#load data
-load(file = paste0(ptd, 'korean_data_clean.RData'))
+load(file = "../Data/korean_data_clean.RData")
 ```
 
 Create data consisting of `patient_id` and location trajectories only for individuals with at least 5 observed location points.
