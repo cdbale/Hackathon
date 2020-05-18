@@ -1,7 +1,5 @@
 ---
-title: "South Korea Patient Data"
-author: "Cameron Bale"
-date: "5/7/2020"
+title: "South Korea COVID-19 Patient Trajectory Analysis"
 output: github_document
 ---
 
@@ -12,7 +10,7 @@ knitr::opts_chunk$set(fig.width = 10,
                       fig.height = 8)
 ```
 
-Install and load packages. We use the `tidyverse` package for data manipulation and visualization, and the `patchwork` package displaying multiple plots in one.
+First, install and load necessary packages. We use the `tidyverse` package for data manipulation and visualization, and the `patchwork` package for displaying multiple plots together.
 ```{r message = FALSE}
 #install.packages('tidyverse')
 #install.packages('patchwork')
@@ -20,11 +18,13 @@ library(tidyverse)
 library(patchwork)
 ```
 
-See data description [here.](https://www.kaggle.com/kimjihoo/ds4c-what-is-this-dataset-detailed-description)
+This project utilizes data on COVID-19 patients in South Korea. We thank those who have worked to provide the **DS4C: Data Science for COVID-19 in South Korea** [kaggle](https://www.kaggle.com/kimjihoo/coronavirusdataset) and [Github](https://github.com/ThisIsIsaac/Data-Science-for-COVID-19) pages.
+
+The data we use comes from the previously mentioned [kaggle](https://www.kaggle.com/kimjihoo/coronavirusdataset) webpage. See data description [here.](https://www.kaggle.com/kimjihoo/ds4c-what-is-this-dataset-detailed-description)
 
 <br>
 
-File `korea_covid_clean.RData` was created using the `korea_data_cleaning.R` [script.](https://github.com/cdbale/Hackathon/blob/master/Code/korea_data_cleaning.R)
+The data file `korea_covid_clean.RData` was created using the `korea_data_cleaning.R` [script.](https://github.com/cdbale/Hackathon/blob/master/Code/korea_data_cleaning.R)
 
 <br>
   
