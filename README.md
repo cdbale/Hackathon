@@ -48,3 +48,7 @@ Through this initial project, our team identified the following areas for future
 1. Identifying the Privacy Risks 
 
 2. Further define key legal terms & factors with corresponding statistical analysis
+
+### Appendices 
+
+[INSERT]
