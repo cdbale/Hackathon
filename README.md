@@ -9,7 +9,7 @@ Matthew Schneider
 Jordan L. Fischer, Esq.
     Teaching Professor of Law
     Thomas R. Kline School of Law at Drexel University
-    "jlf324@drexel.edu"[jlf324@drexel.edu]
+    "jlf324@drexel.edu"(jlf324@drexel.edu)
 
 Cameron Bale
     [INSERT]
