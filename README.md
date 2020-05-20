@@ -7,10 +7,10 @@
 Matthew Schneider
     [INSERT]
 
-<u>Jordan L. Fischer, Esq.</u>
+Jordan L. Fischer, Esq.
     Teaching Professor of Law
     Thomas R. Kline School of Law at Drexel University
-    "jlf324@drexel.edu"(jlf324@drexel.edu)
+    [jlf324@drexel.edu](jlf324@drexel.edu)
 
 Cameron Bale
     [INSERT]
@@ -34,9 +34,10 @@ For the purpose of this FT Global Legal Hackathon, this project addresses the fo
 
 #### Project Assumptions
 
-This porject 
+This project 
 
 ### Legal Framework Analysis 
+
 INSERT
 
 ### Repository for Tools and Documents for Hackathon Project
