@@ -6,7 +6,7 @@
 Matthew Schneider
     [INSERT]
 
-Jordan L. Fischer, Esq.
+<u>Jordan L. Fischer, Esq.</u>
     Teaching Professor of Law
     Thomas R. Kline School of Law at Drexel University
     "jlf324@drexel.edu"(jlf324@drexel.edu)
