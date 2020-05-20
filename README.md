@@ -25,7 +25,9 @@ Prior research (de Montjoye et al. 2013) shows that four spatio-temporal points 
 
 For the purpose of this FT Global Legal Hackathon, this project addresses the following core components: 
 
-* Statistical process to reduce the identifiability of individuals while maintaining most of the usefulness of the data
+* Matching legally defined terms to use metrics of location data.
+
+* Statistical process to reduce the identifiability of individuals while maintaining most of the usefulness of the data.
 
 * Differentially private histogram approach for geospatial data which provides a theoretical guarantee to individual privacy.
 
