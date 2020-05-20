@@ -32,9 +32,15 @@ For the purpose of this FT Global Legal Hackathon, this project addresses the fo
 ### Proposed Solution
 
 
-#### Project Assumptions
+#### Project Assumptions & Out of Scope Matters
 
-This project 
+Due to the shortened timeline of this project, our team made a number of assumptions and selected to only address a sub-set of the issues related to the trade-off between data location and privacy.
+
+1. Varying Legally Defined Terms 
+
+The key terms used in this project (see below) have a vareity of different defintions. Our project created standard defintions from those sources, but we recognize that these terms are arguablly nuanced. As such, in our Future Work, we will look to further explore these various defintions.
+
+2. INSERT
 
 ### Legal Framework with Related Statistical Analysis 
 
@@ -73,7 +79,35 @@ Based on these sources, our project generated the following generalized definiti
 
 #### Anonymization
 
-The concept of annonymization 
+The concept of annonymization is used across a variety of different legal frameworks and regions. For example, NIST defines this term as:
+
+> the process that removes the association between the identifying dataset and the data subject [2]. 
+
+Further, while the term annonymization is not defined within the GDPR, it is used by the European Data Protection Board ("EDPB") in further explaining the impact of the GDPR within the context of geolocation tracking. [3] The Guidelines state that
+
+> Anonymisation refers to the use of a set of techniques in order to remove the ability to link the data with an identified or identifiable natural person against any “reasonable” effort. This “reasonability test” must take into account both objective aspects (time, technical means) and contextual elements that may vary case by case (rarity of a phenomenon including population density, nature and volume of data). If the data fails to pass this test, then it has not been anonymised and therefore remains in the scope of the GDPR. ¶ 15
+
+Futher, these Guidelines outline three factors to determine the "robustmenss of anonymization": 
+
+> (i) singling-out (isolating an individual in a larger group based on the data); (ii) linkability (linking together two records concerning the same individual); and (iii) inference (deducing, with significant probability, unknown information about an individual). ¶ 16
+
+Based on this guidance, our project generated the following generalized defintion for "anonymization":
+
+> A process that removes the association between the identifying dataset and the data subject.
+
+#### Aggregation
+
+The concept of aggregated data bridges both the annonymity of information and the amount of information collected. In essence, it the combination of volume plus annonymity that allows aggregated data to be less prone to privacy concerns. The CCPA directly recognizes the concept of aggregation as follows:
+
+> information that relates to a group or category of consumers, from which individual consumer identities have been removed, that is not linked or reasonably linkable to any consumer or household, including via a device. “Aggregate consumer information” does not mean one or more individual consumer records that have been de­identified. [4]
+
+Additionally, the GDPR does recognize the concept of statistical research in Recital 162, stating:
+
+> Statistical purposes mean any operation of collection and the processing of personal data necessary for statistical surveys or for the production of statistical results. Those statistical results may further be used for different purposes, including a scientific research purpose. The statistical purpose implies that the result of processing for statistical purposes is not personal data, but aggregate data, and that this result or the personal data are not used in support of measures or decisions regarding any particular natural person.
+
+Based on these resources, our project generated the following generalized definition of "aggregation":
+
+> Information that relates to a group or category of individuals, from which individual identities have been removed, that is not linked or reasonably linkable to any individual.
 
 ### Repository for Tools and Documents for Hackathon Project
 
@@ -92,3 +126,5 @@ Through this initial project, our team identified the following areas for future
 [2] NIST Special Publication 800-53 (Rev. 4).
 
 [3] European Data Protection Board Guidelines 04/2020 onthe use of location data and contact tracing tools in the context of the COVID-19 outbreak, 2020.04.21.
+
+[4] The California Consumer Privacy Act of 2018, Cal. Civ. Code § 1798.100, <em>et seq.</em>
