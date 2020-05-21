@@ -81,7 +81,9 @@ The term de-identification is used within US-based cybersecurity and data privac
 
 > general term for any process of removing the association between a set of identifying data and the data subject [2].
 
-By removing this association between the identifier and the information, information becomes de-identified, thereby reducing certian privacy concerns. Additional uses of the term "de-idenfitication" can be found in the Health Insurance Portability and Accountability Act (HIPAA) and the California Consumer Privacy Act of 2018. 
+By removing this association between the identifier and the information, information becomes de-identified, thereby reducing certian privacy concerns. Additional uses of the term "de-idenfitication" can be found in the Health Insurance Portability and Accountability Act (HIPAA) and the California Consumer Privacy Act of 2018.
+
+One outstanding question under de-identification is how it addresses the situation where identifying information can relate to two or more people. The defintion above appears to only address identifying information related to one individual. As such, this term may not be viewed as strong since it limits the privacy restrictions to only removing the single identifiers but leaves open the possibility of using identifying information if its relates to more than one individual.
 
 Based on these sources, our project generated the following generalized definition for "de-identification":
 
