@@ -5,7 +5,8 @@
 ### Project Contacts
 
 Matthew Schneider
-    [INSERT]
+    Assistant Professor of Statistics
+    LeBow College of Business at Drexel University
 
 Jordan L. Fischer, Esq.
     Teaching Professor of Law
@@ -13,7 +14,8 @@ Jordan L. Fischer, Esq.
     [jlf324@drexel.edu](jlf324@drexel.edu)
 
 Cameron Bale
-    [INSERT]
+    PhD Student in Business Analytics
+    LeBow College of Business at Drexel University
 
 ### Location-Based Data Privacy Solution
 
@@ -25,9 +27,9 @@ Prior research (de Montjoye et al. 2013) shows that four spatio-temporal points 
 
 For the purpose of this FT Global Legal Hackathon, this project addresses the following core components: 
 
-* Statistical process to reduce the identifiability of individuals while maintaining most of the usefulness of the data
+* Matching legally defined terms to use metrics of location data. 
 
-* Differentially private histogram approach for geospatial data which provides a theoretical guarantee to individual privacy.
+* Statistical process to reduce the identifiability of individuals while maintaining most of the usefulness of the data
 
 ### Proposed Solution
 
@@ -38,9 +40,11 @@ Due to the shortened timeline of this project, our team made a number of assumpt
 
 1. Varying Legally Defined Terms 
 
-The key terms used in this project (see below) have a vareity of different defintions. Our project created standard defintions from those sources, but we recognize that these terms are arguablly nuanced. As such, in our Future Work, we will look to further explore these various defintions.
+The key terms used in this project (see below) have a vareity of different defintions. These definitions are provided from a variety of stakeholders: legislatures crafting regulation, courts in their legal decisions, standards committees who provide varying frameworks, etc. Our project focuses instead on core privacy principles in the spirit of these defintions and created standard defintions from a vareity of sources for the purposes of this limited scope of analysis. However, we recognize that these terms are arguablly nuanced. As such, in future work, we will look to further explore these various defintions.
 
-2. INSERT
+2. Technoloigical Solution
+
+We focused on one technological solution for location apps that use GPS data. We explored the tradeoff between the accuracy of location data and privacy for COVID-19 persons in South Korea only. In the future, we will expand our solution to other countries that use GPS or Bluetooth data.
 
 ### Legal Framework with Related Statistical Analysis 
 
@@ -51,21 +55,27 @@ The use of location data as solution to address the spread of COVID-19 directly 
 * Anonymization; and
 * Aggregation.
 
-These terms are similar and often used interchangeably. The terms generally address the core idea of removing identifiers from data. However, with regulations and standards, each termcan be defined and used distinctinly differentlly. 
+These terms are similar and often used interchangeably. The terms generally address the core idea of removing identifiers from data. However, with regulations and standards, each term can be defined and used distinctinly differentlly. This creates regional challenges in creating uniform solutions (in the form of applications, etc.) since each law can restrict the way in which the technology is required to remove identifying information.
+
+As such, our proposed solution presents four different use metrics and identifies the corresponding legal terms that could apply to those use metrics. For each of these terms, we identify the relevant privacy strength (low, medium, high).  
 
 #### Pseudonymization
+
+* Privacy Strength: <b>LOW</b>
 
 The term pseudonymization is most relevant within the European Union under the General Data Protection Regulation ("GDPR"). [1] The GDPR defines pseudonymization as: 
 
 > the processing of personal data in such a manner that the personal data can no longer be attributed to a specific data subject without the use of additional information, provided that such additional information is kept separately and is subject to technical and organisational measures to ensure that the personal data are not attributed to an identified or identifiable natural person [Art. 4(5)].
 
-Two key factors are inherent in this defition: (1) attribution and (2) additional information. Based on this defintion, it appears that so long as the "additional information" that can be use to identify the information is removed and separated from the non-identifer information, the data converts from personal data to data that does not fall under the GDPR.
+Two key factors are inherent in this definition: (1) attribution and (2) additional information. Based on this defintion, it appears that so long as the "additional information" that can be use to identify the information is removed and separated from the non-identifer information, the data converts from personal data to data that does not fall under the GDPR.
 
 Based on this, our project generated the following generalized defintion for pseudonymization:
 
 > the processing of personal information in a manner that renders the personal information no longer attributable to a specific consumer without the use of additional information.
 
 #### De-Identification
+
+* Privacy Strength: <b>MEDIUM</b>
 
 The term de-identification is used within US-based cybersecurity and data privacy concepts. The National Institutes of Standards and Technology ("NIST") relies on this concept for removing identifiers from personal information, defining de-identification as:
 
@@ -79,6 +89,8 @@ Based on these sources, our project generated the following generalized definiti
 
 #### Anonymization
 
+* Privacy Strength: <b>MEDIUM</b>
+
 The concept of annonymization is used across a variety of different legal frameworks and regions. For example, NIST defines this term as:
 
 > the process that removes the association between the identifying dataset and the data subject [2]. 
@@ -87,15 +99,19 @@ Further, while the term annonymization is not defined within the GDPR, it is use
 
 > Anonymisation refers to the use of a set of techniques in order to remove the ability to link the data with an identified or identifiable natural person against any “reasonable” effort. This “reasonability test” must take into account both objective aspects (time, technical means) and contextual elements that may vary case by case (rarity of a phenomenon including population density, nature and volume of data). If the data fails to pass this test, then it has not been anonymised and therefore remains in the scope of the GDPR. ¶ 15
 
-Futher, these Guidelines outline three factors to determine the "robustmenss of anonymization": 
+Futher, these Guidelines outline three factors to determine the "robustness of anonymization": 
 
 > (i) singling-out (isolating an individual in a larger group based on the data); (ii) linkability (linking together two records concerning the same individual); and (iii) inference (deducing, with significant probability, unknown information about an individual). ¶ 16
+
+This defintion presents a challenge to truly remove the identifier unless differential privacy is employed. 
 
 Based on this guidance, our project generated the following generalized defintion for "anonymization":
 
 > A process that removes the association between the identifying dataset and the data subject.
 
 #### Aggregation
+
+* Privacy Strength: <b>HIGH</b>
 
 The concept of aggregated data bridges both the annonymity of information and the amount of information collected. In essence, it the combination of volume plus annonymity that allows aggregated data to be less prone to privacy concerns. The CCPA directly recognizes the concept of aggregation as follows:
 
@@ -109,6 +125,8 @@ Based on these resources, our project generated the following generalized defini
 
 > Information that relates to a group or category of individuals, from which individual identities have been removed, that is not linked or reasonably linkable to any individual.
 
+### Use Case Metrics
+
 ### Repository for Tools and Documents for Hackathon Project
 
 ### Future Work
@@ -119,6 +137,14 @@ Through this initial project, our team identified the following areas for future
 
 2. Further define key legal terms & factors with corresponding statistical analysis
 
+3. Differentially private histogram approach for geospatial data which provides a theoretical guarantee to individual privacy
+
+### Contact Us
+
+If you are interested in this work, or want to work with us, please reach out:
+
+
+
 ### Appendices 
 
 [1] Regulation (EU) 2016/679 of the European Parliament and of the Council of 27 April 2016 on the protection of natural persons with regard to the processing of personal data and on the free movement of such data, and repealing Directive 95/46/EC.
@@ -128,3 +154,17 @@ Through this initial project, our team identified the following areas for future
 [3] European Data Protection Board Guidelines 04/2020 onthe use of location data and contact tracing tools in the context of the COVID-19 outbreak, 2020.04.21.
 
 [4] The California Consumer Privacy Act of 2018, Cal. Civ. Code § 1798.100, <em>et seq.</em>
+
+[5] Harvey, S. J. (2013). Smart Meters, Smarter Regulation: Balancing Privacy and Innovation in the Electric Grid. UCLA L. Rev., 61, 2068.
+
+[6] Fienberg, S. E. (2013). Is the Privacy of Network Data an Oxymoron?. Journal of Privacy and Confidentiality, 4(2).
+
+[7] Karwa, V., & Slavković, A. B. (2012, September). Differentially private graphical degree sequences and synthetic graphs. In International Conference on Privacy in Statistical Databases (pp. 273-285). Springer, Berlin, Heidelberg.
+
+[8] Li, B., Karwa, V., Slavković, A., & Steorts, R. C. (2018). A Privacy Preserving Algorithm to Release Sparse High-dimensional Histograms. Journal of Privacy and Confidentiality, 8(1).
+
+[9] Stutzman, F. D., Gross, R., & Acquisti, A. (2013). Silent listeners: The evolution of privacy and disclosure on Facebook. Journal of privacy and confidentiality, 4(2), 2.
+
+[10] Norton Rose Fulbright (2020). Contact tracing apps: A new world for data privacy. Accessed on May 17, 2020 from https://www.nortonrosefulbright.com/en/knowledge/publications/d7a9a296/contact-tracing-apps-a-new-world-for-data-privacy
+
+[11] Tsang, Samantha (2020). Here are the contact tracing apps being deployed around the world. Accessed on May 20, 2020 from https://iapp.org/news/a/here-are-the-contact-tracing-apps-being-employed-around-the-world/
