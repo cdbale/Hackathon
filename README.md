@@ -4,16 +4,16 @@
 
 ### Project Contacts
 
-Matthew Schneider
+* Matthew Schneider
     Assistant Professor of Statistics
     LeBow College of Business at Drexel University
 
-Jordan L. Fischer, Esq.
+* Jordan L. Fischer, Esq.
     Teaching Professor of Law
     Thomas R. Kline School of Law at Drexel University
     [jlf324@drexel.edu](jlf324@drexel.edu)
 
-Cameron Bale
+* Cameron Bale
     PhD Student in Business Analytics
     LeBow College of Business at Drexel University
 
