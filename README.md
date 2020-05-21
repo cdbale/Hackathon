@@ -123,6 +123,8 @@ Additionally, the GDPR does recognize the concept of statistical research in Rec
 
 > Statistical purposes mean any operation of collection and the processing of personal data necessary for statistical surveys or for the production of statistical results. Those statistical results may further be used for different purposes, including a scientific research purpose. The statistical purpose implies that the result of processing for statistical purposes is not personal data, but aggregate data, and that this result or the personal data are not used in support of measures or decisions regarding any particular natural person.
 
+Some research does suggest that aggregated data can be not private, but this is highly unusual. By employing differential privacy, these rare instances of diminished privacy in aggregated data can be minimized. 
+
 Based on these resources, our project generated the following generalized definition of "aggregation":
 
 > Information that relates to a group or category of individuals, from which individual identities have been removed, that is not linked or reasonably linkable to any individual.
