@@ -105,7 +105,7 @@ Futher, these Guidelines outline three factors to determine the "robustness of a
 
 > (i) singling-out (isolating an individual in a larger group based on the data); (ii) linkability (linking together two records concerning the same individual); and (iii) inference (deducing, with significant probability, unknown information about an individual). ¶ 16
 
-This defintion presents a challenge to truly remove the identifier unless differential privacy is employed. 
+This defintion presents a challenge to truly remove the identifier, espeically since statitical inferences can diminish privacy when using anonymization techniques. One solution, to be addressed in future work, is to employ differential privacy to provide heightend privacy in the anonymization process. 
 
 Based on this guidance, our project generated the following generalized defintion for "anonymization":
 
