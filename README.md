@@ -129,7 +129,7 @@ Based on these resources, our project generated the following generalized defini
 
 Across the world, location-based apps for COVID-19 use a variety of metrics and dashboards for the analysis of Global Positioning System (GPS) and Bluetooth data. Metrics vary based on regional differences in privacy regulations (see [10] and [11]), however, the underlying usefulness of the location data can be described by four statistical metrics that we present here.   
 
-For clarity, we present all metrics using GPS coordinates (latitute and longitude) which can be represented in terms of geospatial distances to each other.  Many apps also use Bluetooth data which limits some of the usefulness of the location data, but has an analagous representation.  For example, Metric 1 can be replicated by using Bluetooth receivers at specific locations which correspond to specific GPS coordinates.
+For clarity, we present all metrics using GPS coordinates (latitute and longitude) which can be represented in terms of geospatial distances to each other.  Many apps also use Bluetooth data which limits some of the usefulness of the location data, but has an analagous representation.  For example, Metric 1 can be replicated by using Bluetooth receivers at specific locations which correspond to specific GPS coordinates. Additionally, Bluetooth also requires proximity of distance.
 
 #### Metric 1 (Location Risk)
 The number of COVID-19 persons at specific location k on day t
@@ -147,16 +147,18 @@ For example:
     
 Goal: To provide information to the public for their past risk on all days (t) and all locations (k). 
 
-Examples: South Korea
+Examples: 
+*South Korea
 
-Privacy Solution: (Cameron)
+Privacy Solution: 
+*(Cameron)
 
 #### Metric 2 (Neighborhood Risk)
 The number of COVID-19 persons visiting neighborhood k on day t
 
 Legal Basis: Aggregation
 
-![](images/metric2.png)
+![](/images/metric2.png)
 
 For example: 
 
@@ -166,11 +168,12 @@ For example:
 
 Goal: Public health indicators for all days (t) and all neighborhoods (k). 
 
-Examples: South Korea
+Examples: 
+*South Korea
 
 Privacy Solution: 
-> (Cameron)
-> Differential privacy-based histogram with noise infusion
+* (Cameron)
+* Theoretical-based Privacy Protection: Differential privacy-based histogram with noise infusion based on [8].  For example, you would add a random number to the the number of COVID-19 cases in the numerator of Metric 2 before releasing the statistic to the public. This solution is important because it is effective on neighborhoods with no COVID-19 cases.  Differential privacy ensures that additional insights about any person is not greatly altered whether they are in the data set or not.
 
 
 #### Metric 3 (Contact Tracing)
@@ -186,22 +189,27 @@ For example:
 	> Bob (i) was within 6 feet (d) of John (j) at 11:25:45 AM on May 7, 2020 (t).
 	> Jane (i) was within 6 feet (d) of Matt (j) at 1:47:23 AM on May 9, 2020 (t).
 	> A social network is established: Bob is now connected to both Jane and John in the 1st degree. Bob is connected with Matt in the 2nd degree. 
-	> Bob (i) was diagnosed with COVID-19.   
+	> Bob (i) was diagnosed with COVID-19.  Jane and John are notified.   
 
 Goal: To contact all persons for testing that are 1st degree (or 2nd degree) with a COVID-19 person.
 
 
-Examples: South Korea, Israel, Singapore, many others using either Bluetooth or GPS (see [10] and [11])
+Examples: 
+* South Korea 
+* Israel 
+* Singapore
+* Many others using either Bluetooth or GPS (see [10] and [11])
 
 Privacy Solution: 
-> Privacy-preserving graph degree sequence
+* Fundamental privacy issues: [6] and [9] discuss fundamental privacy issues with using network data with additional identifiers and/or information. Network data is not very private.
+* Privacy-preserving network:  Release a privacy-preserving graph degree sequence based on the scientific methodology of [7]. For example, the graph degree of Bob in the above example is 2 because Bob connects to Jane and John.  This number would have to be altered to protect the privacy of the entire network. 
 
 #### Metric 4 (Quarantine Commpliance)
 Did person i leave location k at any time t?
 
 Legal Basis: Psuedonymization
 
-![](images/metric4.png)
+![](./images/metric4.png)
 
 For example: 
 
@@ -209,11 +217,14 @@ For example:
 
 Goal: To quarantine a person within a specific location
 
-Examples: Hong Kong for COVID-19 persons and newly arrived visitors, Poland for 14 days
+Examples: 
+* Hong Kong for COVID-19 persons and newly arrived visitors 
+* Poland for 14 days
 
 Privacy Solution: 
-> Access control with governmental authority
-> Psuedonymization by removing identifiers
+* Psuedonymization - Removing all direct and indirect identifiers
+* Control - Access control with governmental authority and increased data security measures
+
 
 
 ### Repository for Tools and Documents for Hackathon Project
