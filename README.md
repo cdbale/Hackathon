@@ -125,7 +125,96 @@ Based on these resources, our project generated the following generalized defini
 
 > Information that relates to a group or category of individuals, from which individual identities have been removed, that is not linked or reasonably linkable to any individual.
 
-### Use Case Metrics
+### Statistical Metrics
+
+Across the world, location-based apps for COVID-19 use a variety of metrics and dashboards for the analysis of Global Positioning System (GPS) and Bluetooth data. Metrics vary based on regional differences in privacy regulations (see [10] and [11]), however, the underlying usefulness of the location data can be described by four statistical metrics that we present here.   
+
+For clarity, we present all metrics using GPS coordinates (latitute and longitude) which can be represented in terms of geospatial distances to each other.  Many apps also use Bluetooth data which limits some of the usefulness of the location data, but has an analagous representation.  For example, Metric 1 can be replicated by using Bluetooth receivers at specific locations which correspond to specific GPS coordinates.
+
+#### Metric 1 (Location Risk)
+The number of COVID-19 persons at specific location k on day t
+
+Legal Basis: Aggregation and De-Identification
+
+![](images/metric1.png)
+
+
+For example: 
+
+	> There were 3 (Threat) COVID-19 persons in Washington Square Park (k) on Tuesday (t).
+    
+	> There were 0 (Threat) COVID-19 persons in South Street Grocery (k) on Wednesday (t).
+    
+Goal: To provide information to the public for their past risk on all days (t) and all locations (k). 
+
+Examples: South Korea
+
+Privacy Solution: (Cameron)
+
+#### Metric 2 (Neighborhood Risk)
+The number of COVID-19 persons visiting neighborhood k on day t
+
+Legal Basis: Aggregation
+
+![](images/metric2.png)
+
+For example: 
+
+	> 1% (Prevalence) of the residents in Graduate Hospital (k) on Tuesday (t) had COVID-19.
+    
+	> 0.5% (Prevalence) of the residents in Philadelphia (k) on Wednesday (t) had COVID-19.
+
+Goal: Public health indicators for all days (t) and all neighborhoods (k). 
+
+Examples: South Korea
+
+Privacy Solution: 
+> (Cameron)
+> Differential privacy-based histogram with noise infusion
+
+
+#### Metric 3 (Contact Tracing)
+Did person i have contact with person j at any time y within distance d ?
+
+Legal Basis: NIST Anonymization and GDPR Pseudonymisation
+
+![](images/metric3.png)
+
+For example: 
+
+	> Bob (i) was within 6 feet (d) of Jane (j) at 11:15:20 AM on May 2, 2020 (t).
+	> Bob (i) was within 6 feet (d) of John (j) at 11:25:45 AM on May 7, 2020 (t).
+	> Jane (i) was within 6 feet (d) of Matt (j) at 1:47:23 AM on May 9, 2020 (t).
+	> A social network is established: Bob is now connected to both Jane and John in the 1st degree. Bob is connected with Matt in the 2nd degree. 
+	> Bob (i) was diagnosed with COVID-19.   
+
+Goal: To contact all persons for testing that are 1st degree (or 2nd degree) with a COVID-19 person.
+
+
+Examples: South Korea, Israel, Singapore, many others using either Bluetooth or GPS (see [10] and [11])
+
+Privacy Solution: 
+> Privacy-preserving graph degree sequence
+
+#### Metric 4 (Quarantine Commpliance)
+Did person i leave location k at any time t?
+
+Legal Basis: Psuedonymization
+
+![](images/metric4.png)
+
+For example: 
+
+	> Bob (i) left his apartment at 11:15:20 AM on May 2, 2020 (t) and has violated his quarantine.
+
+Goal: To quarantine a person within a specific location
+
+Examples: Hong Kong for COVID-19 persons and newly arrived visitors, Poland for 14 days
+
+Privacy Solution: 
+> Access control with governmental authority
+> Psuedonymization by removing identifiers
+
 
 ### Repository for Tools and Documents for Hackathon Project
 
