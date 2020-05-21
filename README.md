@@ -4,18 +4,19 @@
 
 ### Project Contacts
 
-Matthew Schneider
+* Matthew Schneider
     Assistant Professor of Statistics
     LeBow College of Business at Drexel University
 
-Jordan L. Fischer, Esq.
+* Jordan L. Fischer, Esq.
     Teaching Professor of Law
     Thomas R. Kline School of Law at Drexel University
     [jlf324@drexel.edu](jlf324@drexel.edu)
 
-Cameron Bale
+* Cameron Bale
     PhD Student in Business Analytics
     LeBow College of Business at Drexel University
+    [cdb327@drexel.edu](cdb327@drexel.edu)
 
 ### Location-Based Data Privacy Solution
 
@@ -40,9 +41,9 @@ Due to the shortened timeline of this project, our team made a number of assumpt
 
 1. Varying Legally Defined Terms 
 
-The key terms used in this project (see below) have a vareity of different defintions. These definitions are provided from a variety of stakeholders: legislatures crafting regulation, courts in their legal decisions, standards committees who provide varying frameworks, etc. Our project focuses instead on core privacy principles in the spirit of these defintions and created standard defintions from a vareity of sources for the purposes of this limited scope of analysis. However, we recognize that these terms are arguablly nuanced. As such, in future work, we will look to further explore these various defintions.
+The key terms used in this project (see below) have a variety of different definitions. These definitions are provided from a variety of stakeholders: legislatures crafting regulation, courts in their legal decisions, standards committees who provide varying frameworks, etc. Our project focuses instead on core privacy principles in the spirit of these definitions and created standard definitions from a variety of sources for the purposes of this limited scope of analysis. However, we recognize that these terms are arguably nuanced. As such, in future work, we will look to further explore these various definitions.
 
-2. Technoloigical Solution
+2. Technological Solution
 
 We focused on one technological solution for location apps that use GPS data. We explored the tradeoff between the accuracy of location data and privacy for COVID-19 persons in South Korea only. In the future, we will expand our solution to other countries that use GPS or Bluetooth data.
 
