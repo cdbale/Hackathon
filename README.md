@@ -1,4 +1,7 @@
 # Global Legal Hackathon
+## Location-Based Data Privacy Solution
+
+May 22, 2020
 
 <br>
 
@@ -7,6 +10,7 @@
 * Matthew Schneider
     Assistant Professor of Statistics
     LeBow College of Business at Drexel University
+    [mjs624@drexel.edu](mjs624@drexel.edu)
 
 * Jordan L. Fischer, Esq.
     Teaching Professor of Law
@@ -20,20 +24,21 @@
 
 ### Location-Based Data Privacy Solution
 
-This Project addresses the trade-off between the accuracy of location data with privacy and legal privacy protections.
+This Project addresses the trade-off between the accuracy of location data with legal privacy protections.
 
-Prior research (de Montjoye et al. 2013) shows that four spatio-temporal points are enough to uniquely identify 95% of individuals. This means that the assortment of COVID-19 location-tracking apps are destined to identify some individuals. Privacy concerns are further exacerbated when geospatial points can be traced to home addresses which are linked to public tax and real estate sale records.
+Prior research (de Montjoye et al. 2013) shows that four (4) spatio-temporal points are enough to uniquely identify 95% of individuals. This means that the assortment of COVID-19 location-tracking apps are destined to identify some individuals. Privacy concerns are further exacerbated when geospatial points can be traced to home addresses which are linked to public tax and real estate sale records. 
 
 ### Project Goals
 
 For the purpose of this FT Global Legal Hackathon, this project addresses the following core components: 
 
-* Matching legally defined terms to use metrics of location data. 
+* Matching legally defined terms to the use cases and statistical metrics of location data. 
 
-* Statistical process to reduce the identifiability of individuals while maintaining most of the usefulness of the data
+* Statistical process to reduce the identifiability of individuals while maintaining most of the usefulness of the data.
 
 ### Proposed Solution
 
+(Cameron)
 
 #### Project Assumptions & Out of Scope Matters
 
@@ -41,24 +46,24 @@ Due to the shortened timeline of this project, our team made a number of assumpt
 
 1. Varying Legally Defined Terms 
 
-The key terms used in this project (see below) have a variety of different definitions. These definitions are provided from a variety of stakeholders: legislatures crafting regulation, courts in their legal decisions, standards committees who provide varying frameworks, etc. Our project focuses instead on core privacy principles in the spirit of these definitions and created standard definitions from a variety of sources for the purposes of this limited scope of analysis. However, we recognize that these terms are arguably nuanced. As such, in future work, we will look to further explore these various definitions.
+The key terms used in this project (see below) have a variety of different definitions. These definitions are provided from different resources and stakeholders: legislatures crafting regulation, courts in their legal decisions, standards committees who provide varying frameworks, etc. Our project focuses instead on core privacy principles in the spirit of these definitions and created standard definitions from a variety of sources for the purposes of the limited scope of this analysis. However, we recognize that these terms are arguably nuanced. As such, in future work, we will look to further explore these various definitions.
 
 2. Technological Solution
 
-We focused on one technological solution for location apps that use GPS data. We explored the tradeoff between the accuracy of location data and privacy for COVID-19 persons in South Korea only. In the future, we will expand our solution to other countries that use GPS or Bluetooth data.
+We focused on one technological solution for location apps that use Global Positioning System (GPS) data. We explored the tradeoff between the accuracy of location data and privacy for COVID-19 persons in South Korea only. In the future, we will apply our solution to data from other countries.  We also propose conceptual solutions for statistical metrics that use Bluetooth data. 
 
 ### Legal Framework with Related Statistical Analysis 
 
-The use of location data as solution to address the spread of COVID-19 directly impacts interrelated but distinctly different terms under privacy law: 
+The use of location data as a solution to address the spread of COVID-19 directly impacts interrelated but distinctly different terms under privacy law: 
 
 * Pseudonymization;
 * De-identification;
 * Anonymization; and
 * Aggregation.
 
-These terms are similar and often used interchangeably. The terms generally address the core idea of removing identifiers from data. However, with regulations and standards, each term can be defined and used distinctinly differentlly. This creates regional challenges in creating uniform solutions (in the form of applications, etc.) since each law can restrict the way in which the technology is required to remove identifying information.
+These terms are similar and often used interchangeably. The terms generally address the core idea of removing identifiers from data. However, with regulations and standards, each term can be defined and used distinctinly differentlly. This creates regional challenges to create uniform, global solutions (in the form of applications, etc.) since each law can restrict the way in which the technology is required to remove the identifying information.
 
-As such, our proposed solution presents four different use metrics and identifies the corresponding legal terms that could apply to those use metrics. For each of these terms, we identify the relevant privacy strength (low, medium, high).  
+As such, our proposal presents four (4) different use metrics and identifies the corresponding legal terms that could apply to those use metrics.  For each of these terms, we identify the relevant privacy strength (low, medium, high).  For each metric, we propose technological solutions to increase privacy at a minimal tradeoff to accuracy.
 
 #### Pseudonymization
 
@@ -84,7 +89,7 @@ The term de-identification is used within US-based cybersecurity and data privac
 
 By removing this association between the identifier and the information, information becomes de-identified, thereby reducing certian privacy concerns. Additional uses of the term "de-idenfitication" can be found in the Health Insurance Portability and Accountability Act (HIPAA) and the California Consumer Privacy Act of 2018.
 
-One outstanding question under de-identification is how it addresses the situation where identifying information can relate to two or more people. The defintion above appears to only address identifying information related to one individual. As such, this term may not be viewed as strong since it limits the privacy restrictions to only removing the single identifiers but leaves open the possibility of using identifying information if its relates to more than one individual.
+One outstanding question under de-identification is how to address the situation where identifying information can relate to two or more people. The defintion above appears to only address identifying information related to one individual. As such, this term may not be viewed as strong since it limits the privacy restrictions to only removing the single identifiers but leaves open the possibility of using identifying information if its relates to more than one individual.
 
 Based on these sources, our project generated the following generalized definition for "de-identification":
 
@@ -98,7 +103,7 @@ The concept of annonymization is used across a variety of different legal framew
 
 > the process that removes the association between the identifying dataset and the data subject [2]. 
 
-Further, while the term annonymization is not defined within the GDPR, it is used by the European Data Protection Board ("EDPB") in further explaining the impact of the GDPR within the context of geolocation tracking. [3] The Guidelines state that
+Further, while the term anonymization is not defined within the GDPR, it is used by the European Data Protection Board ("EDPB") in further explaining the impact of the GDPR within the context of geolocation tracking. [3] The Guidelines state that
 
 > Anonymisation refers to the use of a set of techniques in order to remove the ability to link the data with an identified or identifiable natural person against any “reasonable” effort. This “reasonability test” must take into account both objective aspects (time, technical means) and contextual elements that may vary case by case (rarity of a phenomenon including population density, nature and volume of data). If the data fails to pass this test, then it has not been anonymised and therefore remains in the scope of the GDPR. ¶ 15
 
@@ -106,7 +111,7 @@ Futher, these Guidelines outline three factors to determine the "robustness of a
 
 > (i) singling-out (isolating an individual in a larger group based on the data); (ii) linkability (linking together two records concerning the same individual); and (iii) inference (deducing, with significant probability, unknown information about an individual). ¶ 16
 
-This defintion presents a challenge to truly remove the identifier, espeically since statitical inferences can diminish privacy when using anonymization techniques. One solution, to be addressed in future work, is to employ differential privacy to provide heightend privacy in the anonymization process. 
+This defintion presents a challenge to truly remove the identifier, especially since statitical inferences can diminish privacy when using anonymization techniques. One solution, to be addressed in future work, is to employ differential privacy to provide heightend privacy in the anonymization process. 
 
 Based on this guidance, our project generated the following generalized defintion for "anonymization":
 
@@ -116,7 +121,7 @@ Based on this guidance, our project generated the following generalized defintio
 
 * Privacy Strength: <b>HIGH</b>
 
-The concept of aggregated data bridges both the annonymity of information and the amount of information collected. In essence, it the combination of volume plus annonymity that allows aggregated data to be less prone to privacy concerns. The CCPA directly recognizes the concept of aggregation as follows:
+The concept of aggregated data bridges both the anonymity of information and the amount of information collected. In essence, it is the combination of volume plus anonymity that allows aggregated data to be less prone to privacy concerns. The CCPA directly recognizes the concept of aggregation as follows:
 
 > information that relates to a group or category of consumers, from which individual consumer identities have been removed, that is not linked or reasonably linkable to any consumer or household, including via a device. “Aggregate consumer information” does not mean one or more individual consumer records that have been de­identified. [4]
 
@@ -124,7 +129,7 @@ Additionally, the GDPR does recognize the concept of statistical research in Rec
 
 > Statistical purposes mean any operation of collection and the processing of personal data necessary for statistical surveys or for the production of statistical results. Those statistical results may further be used for different purposes, including a scientific research purpose. The statistical purpose implies that the result of processing for statistical purposes is not personal data, but aggregate data, and that this result or the personal data are not used in support of measures or decisions regarding any particular natural person.
 
-Some research does suggest that aggregated data can be not private, but this is highly unusual. By employing differential privacy, these rare instances of diminished privacy in aggregated data can be minimized.
+Some research does suggest that aggregated data can be not private, but this is highly unusual. By employing differential privacy, these rare instances of diminished privacy in aggregated data can be minimized (a concept to be explored in future work).
 
 It is important to note that aggregation depends on the number of individuals collected within a category or group. In future work, the amount of data to be summed or added to determine a group size will be explored further. [5] 
 
@@ -134,9 +139,9 @@ Based on these resources, our project generated the following generalized defini
 
 ### Statistical Metrics
 
-Across the world, location-based apps for COVID-19 use a variety of metrics and dashboards for the analysis of Global Positioning System (GPS) and Bluetooth data. Metrics vary based on regional differences in privacy regulations (see [10] and [11]), however, the underlying usefulness of the location data can be described by four statistical metrics that we present here.   
+Across the world, location-based apps for COVID-19 use a variety of metrics and dashboards to analyze GPS and Bluetooth data. Metrics vary based on regional differences in privacy regulations (see [10] and [11]); however, the underlying usefulness of the location data can be described with four (4) basic metrics.   
 
-For clarity, we present all metrics using GPS coordinates (latitute and longitude) which can be represented in terms of geospatial distances to each other.  Many apps also use Bluetooth data which limits some of the usefulness of the location data, but has an analagous representation.  For example, Metric 1 can be replicated by using Bluetooth receivers at specific locations which correspond to specific GPS coordinates. Additionally, Bluetooth also requires proximity of distance.
+For clarity, we present all metrics using GPS coordinates (latitute and longitude) which can transformed to geospatial distances to each other. Many apps also use Bluetooth data which limits some of the usefulness of the location data, but has an analagous transformation to distance (i.e., a small distance is required for a Bluetooth connection). For example, Metric 1 can be replicated by using Bluetooth receivers at specific locations which correspond to specific GPS coordinates. 
 
 #### Metric 1 (Location Risk)
 The number of COVID-19 persons at specific location k on day t
@@ -200,7 +205,6 @@ For example:
 
 Goal: To contact all persons for testing that are 1st degree (or 2nd degree) with a COVID-19 person.
 
-
 Examples: 
 * South Korea 
 * Israel 
@@ -232,9 +236,13 @@ Privacy Solution:
 * Psuedonymization - Removing all direct and indirect identifiers
 * Control - Access control with governmental authority and increased data security measures
 
+### Conclusion
 
+(Cameron)
 
 ### Repository for Tools and Documents for Hackathon Project
+
+(Cameron)
 
 ### Future Work
 
@@ -250,7 +258,11 @@ Through this initial project, our team identified the following areas for future
 
 If you are interested in this work, or want to work with us, please reach out:
 
+* Matthew Schneider, [mjs624@drexel.edu](mjs624@drexel.edu)
 
+* Jordan L. Fischer, Esq., [jlf324@drexel.edu](jlf324@drexel.edu)
+
+* Cameron Bale, [cdb327@drexel.edu](cdb327@drexel.edu)
 
 ### Appendices 
 
