@@ -68,7 +68,7 @@ The key terms used in this project (see below) have a variety of different defin
 
 2. Technological Solution
 
-We focused on one technological solution for location apps that use Global Positioning System (GPS) data. We explored the tradeoff between the accuracy of location data and privacy for COVID-19 persons in South Korea only. In the future, we will apply our solution to data from other countries.  We also propose conceptual solutions for statistical metrics that use Bluetooth data. 
+We focused on one technological solution for location apps that use Global Positioning System (GPS) data. We explored the tradeoff between the accuracy of location data and privacy for COVID-19 persons in South Korea only. This data is relatively sparse (only about 1000 individuals) which means that the likelihood of an individual having at least one point in their location trajectory that is different from all other individuals is very high. We also did not incorporate the time an individual was observed in a given location. However, we expect that when considering a much larger dataset as well as the time component, the proportion of unique trajectories would remain approximately the same. Overall, the tradeoff between accuracy and privacy will need to be a constant consideration. In the future, we will apply our solution to data of varying sizes from other countries. We also propose conceptual solutions for statistical metrics that use Bluetooth data. 
 
 ### Legal Framework with Related Statistical Analysis 
 
