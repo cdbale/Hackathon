@@ -42,8 +42,8 @@ We propose a relatively simple location data protection method called **location
 
 Location coarsening reduces the identifiability of individuals in two ways:
 
-* Reduces location uniqueness by rounding different individuals' location measurements to identical values
-* Alters individuals' original locations by a distance that is directly controllable by the amount of rounding applied
+* Reduces location uniqueness by rounding different individuals' location measurements to identical values; and
+* Alters individuals' original locations by a distance that is directly controllable by the amount of rounding applied.
 
 For example, say individual *i* is observed at location `37.59256, 127.0170` at time *t*. If we elect to round observed location measurements to three decimal places, individual *i* would now be observed at location `37.593, 127.017` at time *t*. The difference between individual *i*'s original location at time *t* and their new location is 49.1 meters. In addition, individual *i* may now be observed at the same location at time *t* as some other individual(s) in the data since individual *i*'s location is now more general.
 
