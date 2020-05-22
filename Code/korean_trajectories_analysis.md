@@ -160,7 +160,7 @@ access.
 ``` r
 up_5d <- map_dfc(1:5, function(x) trajectory_uniqueness(trajectories, num_points = x, nits = 100))
 save(up_5d, file = '../Data/pct_unique_5d.RData')
-#load('pct_unique_5d.RData')
+#load('../Data/pct_unique_5d.RData')
 ```
 
 <br>
@@ -292,7 +292,7 @@ trajectories_4d <- trajectories %>%
 
 up_4d <- map_dfc(1:5, function(x) trajectory_uniqueness(trajectories_4d[,c(1, 4, 3)], num_points = x, nits = 100))
 save(up_4d, file = '../Data/pct_unique_4d.RData')
-#load('pct_unique_4d.RData')
+#load('../Data/pct_unique_4d.RData')
 
 colnames(up_4d) <- pvar_names
 
@@ -392,7 +392,7 @@ trajectories_3d <- trajectories %>%
 
 up_3d <- map_dfc(1:5, function(x) trajectory_uniqueness(trajectories_3d[,c(1, 4, 5)], num_points = x, nits = 100))
 save(up_3d, file = '../Data/pct_unique_3d.RData')
-#load('pct_unique_3d.RData')
+#load('../Data/pct_unique_3d.RData')
 
 colnames(up_3d) <- pvar_names
 
@@ -446,7 +446,7 @@ trajectories_2d <- trajectories %>%
 
 up_2d <- map_dfc(1:5, function(x) trajectory_uniqueness(trajectories_2d[,c(1, 4, 5)], num_points = x, nits = 100))
 save(up_2d, file = '../Data/pct_unique_2d.RData')
-#load('pct_unique_2d.RData')
+#load('../Data/pct_unique_2d.RData')
 
 colnames(up_2d) <- pvar_names
 
@@ -502,7 +502,7 @@ trajectories_1d <- trajectories %>%
 
 up_1d <- map_dfc(1:5, function(x) trajectory_uniqueness(trajectories_1d[,c(1, 4, 5)], num_points = x, nits = 100))
 save(up_1d, file = '../Data/pct_unique_1d.RData')
-#load('pct_unique_1d.RData')
+#load('../Data/pct_unique_1d.RData')
 
 colnames(up_1d) <- pvar_names
 
@@ -555,7 +555,7 @@ trajectories_0d <- trajectories %>%
 
 up_0d <- map_dfc(1:5, function(x) trajectory_uniqueness(trajectories_0d[,c(1, 4, 5)], num_points = x, nits = 100))
 save(up_0d, file = '../Data/pct_unique_0d.RData')
-#load('pct_unique_0d.RData')
+#load('../Data/pct_unique_0d.RData')
 
 colnames(up_0d) <- pvar_names
 
@@ -677,13 +677,15 @@ measurements so that individual location observations are shifted, and
 the number of unique location trajectories is reduced. This comes at a
 cost of the accuracy of the location data. Outlined in the table below
 are the median values for the distance that an individual location point
-is shifted when rounding to the corresponding number of decimals.
-Different specificities may be selected depending on the use case of the
-location data and how accurate the data needs to be.
+is shifted as well as the median percentage of unique trajectories
+across all sample sizes when rounding to the corresponding number of
+decimals. Different specificities may be selected depending on the use
+case of the location data and how accurate the data needs to be.
 
-|                             | 5 decimals | 4 decimals | 3 decimals | 2 decimals | 1 decimal | 0 decimals |
-| --------------------------- | :--------: | :--------: | :--------: | :--------: | :-------: | :--------: |
-| Median Distance Shifted (m) |     0      |    2.74    |   40.45    |   390.16   | 3,989.03  | 46,553.73  |
+|                              | 5 decimals | 4 decimals | 3 decimals | 2 decimals | 1 decimal | 0 decimals |
+| ---------------------------- | :--------: | :--------: | :--------: | :--------: | :-------: | :--------: |
+| Median Distance Shifted (m)  |     0      |    2.74    |   40.45    |   390.16   | 3,989.03  | 46,553.73  |
+| Median % Unique Trajectories |   99.35    |   99.25    |   99.25    |   97.38    |   62.06   |   19.07    |
 
 We discuss some common use cases for location data in the
 [README.md](https://github.com/cdbale/Hackathon/blob/master/README.md)
