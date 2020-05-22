@@ -256,9 +256,13 @@ Privacy Solution:
 
 ### Conclusion
 
-The proliferation of COVID-19 tracking applications leads to a high probability that individuals, as well as sensitive information about those individuals, may be indentified from their location data. We have proposed a statistical solution as well as conceptual solutions to this problem. These solutions increase privacy at a minimal tradeoff to accuracy while meeting various legal privacy definitions of varying strengths.
+There are many privacy risks inherent in the vast amounts of data on individuals that exists, and this has led to a wide variety of legal definitions of privacy terms. There is perhaps just as wide a variety of proposed statistical solutions to various privacy risks. The recent proliferation of COVID-19 tracking applications leads to a high probability that individuals, as well as sensitive information about them, may be indentified from their location data.
 
-This integration of statistical methods and legal framework is essential to ensuring individuals are provided adequate privacy under the law while preserving the usefulness of their data for the benefit of the public from COVID-19 tracking applictions.
+In our integration of legal frameworks and statistical methods, we have chosen core privacy principles in the spirit of many legal definitions and created standard definitions from a variety of sources for the purposes of the limited scope of this analysis. We have proposed a statistical solution, location coarsening, that can increase the privacy of individuals' location data while maintaining most of the usefulness of the data for two metrics relevant to COVID-19 tracking applications: neighborhood risk and location risk. Using location coarsening to increase the privacy of the data used to calculate these metrics achieves the requirements outlined in the legal frameworks of aggregation and de-identification.
+
+We have also proposed conceptual solutions to the problem of balancing the usefulness of location data for three metrics relevant to COVID-19 tracking applications with the privacy of location data defined under various legal frameworks. These metrics are neighborhood risk, contact tracing, and quarantine compliance. All proposed conceptual solutions increase privacy at a minimal tradeoff to accuracy while meeting various legal privacy definitions of varying strengths: aggregation, NIST Anonymization, and two versions of Pseudonymisation.
+
+The legal frameworks we have defined and the solutions we have proposed have laid a foundation for future work in integrating legal and statistical approaches to data privacy. The integration of statistical methods and legal frameworks is essential to ensuring individuals are provided adequate privacy under the law while preserving the usefulness of their data for the benefit of the public from COVID-19 tracking applictions.
 
 ### Repository for Tools and Documents for Hackathon Project
 
