@@ -58,8 +58,6 @@ Using data on COVID-19 patient locations over time, we calculate the percentage 
 
 Our proposed solution will be most useful applicable in use cases where the desired specificy of location is known. We highlight some of these cases in the **Statistical Metrics** section of this document.
 
-We have provided all [code](https://github.com/cdbale/Hackathon/blob/master/Code/korean_trajectories_analysis.md) and [data](https://github.com/cdbale/Hackathon/tree/master/Data) used in our calculations and our proposed solution in the `Code` and `Data` folders of this repository.
-
 ### Project Assumptions & Out of Scope Matters
 
 Due to the shortened timeline of this project, our team made a number of assumptions and selected to only address a sub-set of the issues related to the trade-off between data location and privacy.
@@ -262,7 +260,7 @@ Privacy Solution:
 
 ### Repository for Tools and Documents for Hackathon Project
 
-(Cameron)
+We have provided all [code](https://github.com/cdbale/Hackathon/blob/master/Code/korean_trajectories_analysis.md) and [data](https://github.com/cdbale/Hackathon/tree/master/Data) used in our calculations and our proposed solution in the `Code` and `Data` folders of this repository.
 
 ### Future Work
 
