@@ -157,9 +157,9 @@ Based on these resources, our project generated the following generalized defini
 
 ### Statistical Metrics
 
-Across the world, location-based apps for COVID-19 use a variety of metrics and dashboards to analyze GPS and Bluetooth data. Metrics vary based on regional differences in privacy regulations (see [10] and [11]); however, the underlying usefulness of the location data can be described with four (4) basic metrics.   
+Globally, location-based apps for COVID-19 use different metrics and dashboards to analyze GPS and Bluetooth data. Metrics are inconsistent due to regional differences in privacy regulations (see [10] and [11]) and preferences from app developers; however, the underlying usefulness of the location data can be described with four (4) basic statistical metrics.   
 
-For clarity, we present all metrics using GPS coordinates (latitute and longitude) which can transformed to geospatial distances to each other. Many apps also use Bluetooth data which limits some of the usefulness of the location data, but has an analagous transformation to distance (i.e., a small distance is required for a Bluetooth connection). For example, Metric 1 can be replicated by using Bluetooth receivers at specific locations which correspond to specific GPS coordinates. 
+For clarity, we present all metrics using GPS coordinates (latitute and longitude) which can transformed to geospatial distances to each other (i.e., a distance matrix). Many apps also use Bluetooth data which limits some of the usefulness of the location data, but has an analagous transformation to distance (i.e., a small distance is required for a Bluetooth connection). For example, Metric 1 can be replicated by using Bluetooth receivers at specific locations which correspond to specific GPS coordinates. 
 
 #### Metric 1 (Location Risk)
 The number of COVID-19 persons at specific location k on day t
