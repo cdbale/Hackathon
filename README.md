@@ -35,6 +35,7 @@ For the purpose of this FT Global Legal Hackathon, this project addresses the fo
 
 ### Proposed Solution
 
+(Cameron)
 
 #### Project Assumptions & Out of Scope Matters
 
@@ -201,7 +202,6 @@ For example:
 
 Goal: To contact all persons for testing that are 1st degree (or 2nd degree) with a COVID-19 person.
 
-
 Examples: 
 * South Korea 
 * Israel 
@@ -239,6 +239,8 @@ Privacy Solution:
 
 ### Repository for Tools and Documents for Hackathon Project
 
+(Cameron)
+
 ### Future Work
 
 Through this initial project, our team identified the following areas for future work to continue to build out effective solutions to balance the accuracy of location-data and privacy concerns:
@@ -253,7 +255,11 @@ Through this initial project, our team identified the following areas for future
 
 If you are interested in this work, or want to work with us, please reach out:
 
+* Matthew Schneider, [mjs624@drexel.edu](mjs624@drexel.edu)
 
+* Jordan L. Fischer, Esq., [jlf324@drexel.edu](jlf324@drexel.edu)
+
+* Cameron Bale, [cdb327@drexel.edu](cdb327@drexel.edu)
 
 ### Appendices 
 
