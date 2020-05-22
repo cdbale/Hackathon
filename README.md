@@ -164,7 +164,7 @@ For clarity, we present all metrics using GPS coordinates (latitute and longitud
 #### Metric 1 (Location Risk)
 The number of COVID-19 persons at specific location k on day t
 
-Legal Basis: Aggregation and De-Identification
+Legal Term: Aggregation and De-Identification
 
 ![](images/metric1.png)
 
@@ -186,7 +186,7 @@ Privacy Solution:
 #### Metric 2 (Neighborhood Risk)
 The number of COVID-19 persons visiting neighborhood k on day t
 
-Legal Basis: Aggregation
+Legal Term: Aggregation
 
 ![](/images/metric2.png)
 
@@ -209,7 +209,7 @@ Privacy Solution:
 #### Metric 3 (Contact Tracing)
 Did person i have contact with person j at any time y within distance d ?
 
-Legal Basis: NIST Anonymization and GDPR Pseudonymisation
+Legal Term: NIST Anonymization and GDPR Pseudonymisation
 
 ![](images/metric3.png)
 
@@ -236,7 +236,7 @@ Privacy Solution:
 #### Metric 4 (Quarantine Commpliance)
 Did person i leave location k at any time t?
 
-Legal Basis: Psuedonymization
+Legal Term: Psuedonymization
 
 ![](./images/metric4.png)
 
