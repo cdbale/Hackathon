@@ -180,10 +180,10 @@ For example:
 Goal: To provide information to the public for their past risk on all days (t) and all locations (k). 
 
 Examples: 
-*South Korea
+* South Korea
 
 Privacy Solution: 
-*(Cameron)
+* Location coarsening with expanded geofence: perform location coarsening to the extent that most observed locations have been significantly shifted, where the maximum shifted distance constitutes a reasonable distance to expand the geofence radius. For example, round all observed locations such that any given location point is shifted by at least 50 meters, but no more than 75 meters. Then, expand the radius of any geofence of interest by 75 meters.
 
 #### Metric 2 (Neighborhood Risk)
 The number of COVID-19 persons visiting neighborhood k on day t
@@ -201,10 +201,10 @@ For example:
 Goal: Public health indicators for all days (t) and all neighborhoods (k). 
 
 Examples: 
-*South Korea
+* South Korea
 
 Privacy Solution: 
-* (Cameron)
+* Location coarsening with expanded neighborhood boundary: perform location coarsening to the extent that most observed locations have been significantly shifted, where the maximum shifted distance constitutes a reasonable distance to expand the neighborhood radius. For example, round all observed locations such that any given location point is shifted by at least 75 meters, but no more than 100 meters. Then, expand the boundary of any neighborhood of interest by 100 meters.
 * Theoretical-based Privacy Protection: Differential privacy-based histogram with noise infusion based on [8].  For example, you would add a random number to the the number of COVID-19 cases in the numerator of Metric 2 before releasing the statistic to the public. This solution is important because it is effective on neighborhoods with no COVID-19 cases.  Differential privacy ensures that additional insights about any person is not greatly altered whether they are in the data set or not.
 
 
