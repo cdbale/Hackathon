@@ -256,7 +256,9 @@ Privacy Solution:
 
 ### Conclusion
 
-(Cameron)
+The proliferation of COVID-19 tracking applications leads to a high probability that individuals, as well as sensitive information about them, may be indentified from their location data. We have proposed a statistical solution as well as conceptual solutions to this problem. These solutions increase privacy at a minimal tradeoff to accuracy while meeting various legal privacy definitions of varying strengths.
+
+This integration of statistical methods and legal framework is essential to ensuring individuals are provided adequate privacy under the law while preserving the usefulness of their data for the benefit of the public from COVID-19 tracking applictions.
 
 ### Repository for Tools and Documents for Hackathon Project
 
