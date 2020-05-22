@@ -38,7 +38,27 @@ For the purpose of this FT Global Legal Hackathon, this project addresses the fo
 
 ### Proposed Solution
 
-(Cameron)
+We propose a relatively simple location data protection method called **location coarsening**. This method involves rounding observed latitude and longitude values, which are the measurements commonly used to define geospatial points, to meet the requirements of both *anonymization* and *aggregation*, both of which will be defined shortly.
+
+Location coarsening reduces the identifiability of individuals in two ways:
+
+* Reduces location uniqueness by rounding different individuals' location measurements to identical values
+* Alters individuals' original locations by a distance that is directly controllable by the amount of rounding applied
+
+For example, say individual *i* is observed at location `37.59256, 127.0170` at time *t*. If we elect to round observed location measurements to three decimal places, individual *i* would now be observed at location `37.593, 127.017` at time *t*. The difference between individual *i*'s original location at time *t* and their new location is 49.1 meters. In addition, individual *i* may now be observed at the same location at time *t* as some other individual(s) in the data since individual *i*'s location is now more general.
+
+Using data on COVID-19 patient locations over time, we calculate the percentage of individuals who have a unique location trajectory as well as the distance that individuals' observed locations are shifted when rounding to different numbers of decimals. The table below shows the median amount that an individual observed location is shifted when location is rounded to the corresponding number of decimals. Below that is the median percentage individual trajectories that are unique at the corresponding number of decimals. As the percentage of unique trajectories decreases and the distance between original observed location and coarsened location increases, the usefulness of the data also decreases because location measurements become very general and far from their original values.
+
+
+|                             | 5 decimals | 4 decimals | 3 decimals | 2 decimals | 1 decimal | 0 decimals |
+|-----------------------------|:----------:|:----------:|:----------:|:----------:|:---------:|:----------:|
+| Median Distance Shifted (m) |      0     |    2.74    |    40.45   |   390.16   |  3,989.03 |  46,553.73 |
+| Median % Unique Trajectories|    99.35   |   99.25    |    99.25   |    97.38   |    62.06  |    19.07   |
+
+
+Our proposed solution will be most useful applicable in use cases where the desired specificy of location is known. We highlight some of these cases in the **Statistical Metrics** section of this document.
+
+We have provided all [code](https://github.com/cdbale/Hackathon/blob/master/Code/korean_trajectories_analysis.md) and [data](https://github.com/cdbale/Hackathon/tree/master/Data) used in our calculations and our proposed solution in the `Code` and `Data` folders of this repository.
 
 #### Project Assumptions & Out of Scope Matters
 
