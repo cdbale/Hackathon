@@ -26,7 +26,7 @@ May 22, 2020
 
 This Project addresses the trade-off between the accuracy of location data with legal privacy protections.
 
-Prior research (de Montjoye et al. 2013) shows that four (4) spatio-temporal points are enough to uniquely identify 95% of individuals. This means that the assortment of COVID-19 location-tracking apps are destined to identify some individuals. Privacy concerns are further exacerbated when geospatial points can be traced to home addresses which are linked to public tax and real estate sale records. 
+Prior research [12] shows that four (4) spatio-temporal points are enough to uniquely identify 95% of individuals. This means that the assortment of COVID-19 location-tracking apps are destined to identify some individuals. Privacy concerns are further exacerbated when geospatial points can be traced to home addresses which are linked to public tax and real estate sale records. 
 
 ### Project Goals
 
@@ -311,3 +311,5 @@ If you are interested in this work, or want to work with us, please reach out:
 [10] Norton Rose Fulbright (2020). Contact tracing apps: A new world for data privacy. Accessed on May 17, 2020 from https://www.nortonrosefulbright.com/en/knowledge/publications/d7a9a296/contact-tracing-apps-a-new-world-for-data-privacy
 
 [11] Tsang, Samantha (2020). Here are the contact tracing apps being deployed around the world. Accessed on May 20, 2020 from https://iapp.org/news/a/here-are-the-contact-tracing-apps-being-employed-around-the-world/
+
+[12] De Montjoye, Y. A., Hidalgo, C. A., Verleysen, M., & Blondel, V. D. (2013). Unique in the crowd: The privacy bounds of human mobility. Scientific reports, 3, 1376.
