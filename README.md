@@ -7,6 +7,7 @@
 * Matthew Schneider
     Assistant Professor of Statistics
     LeBow College of Business at Drexel University
+    [mjs624@drexel.edu](mjs624@drexel.edu)
 
 * Jordan L. Fischer, Esq.
     Teaching Professor of Law
@@ -20,17 +21,17 @@
 
 ### Location-Based Data Privacy Solution
 
-This Project addresses the trade-off between the accuracy of location data with privacy and legal privacy protections.
+This Project addresses the trade-off between the accuracy of location data with legal privacy protections.
 
-Prior research (de Montjoye et al. 2013) shows that four spatio-temporal points are enough to uniquely identify 95% of individuals. This means that the assortment of COVID-19 location-tracking apps are destined to identify some individuals. Privacy concerns are further exacerbated when geospatial points can be traced to home addresses which are linked to public tax and real estate sale records.
+Prior research (de Montjoye et al. 2013) shows that four spatio-temporal points are enough to uniquely identify 95% of individuals. This means that the assortment of COVID-19 location-tracking apps are destined to identify some individuals. Privacy concerns are further exacerbated when geospatial points can be traced to home addresses which are linked to public tax and real estate sale records. 
 
 ### Project Goals
 
 For the purpose of this FT Global Legal Hackathon, this project addresses the following core components: 
 
-* Matching legally defined terms to use metrics of location data. 
+* Matching legally defined terms to the use cases and statistical metrics of location data. 
 
-* Statistical process to reduce the identifiability of individuals while maintaining most of the usefulness of the data
+* Statistical process to reduce the identifiability of individuals while maintaining most of the usefulness of the data.
 
 ### Proposed Solution
 
@@ -45,7 +46,7 @@ The key terms used in this project (see below) have a variety of different defin
 
 2. Technological Solution
 
-We focused on one technological solution for location apps that use GPS data. We explored the tradeoff between the accuracy of location data and privacy for COVID-19 persons in South Korea only. In the future, we will expand our solution to other countries that use GPS or Bluetooth data.
+We focused on one technological solution for location apps that use Global Positioning System (GPS) data. We explored the tradeoff between the accuracy of location data and privacy for COVID-19 persons in South Korea only. In the future, we will apply our solution to data from other countries.  We also propose conceptual solutions for statistical metrics that use Bluetooth data. 
 
 ### Legal Framework with Related Statistical Analysis 
 
@@ -58,7 +59,7 @@ The use of location data as solution to address the spread of COVID-19 directly 
 
 These terms are similar and often used interchangeably. The terms generally address the core idea of removing identifiers from data. However, with regulations and standards, each term can be defined and used distinctinly differentlly. This creates regional challenges in creating uniform solutions (in the form of applications, etc.) since each law can restrict the way in which the technology is required to remove identifying information.
 
-As such, our proposed solution presents four different use metrics and identifies the corresponding legal terms that could apply to those use metrics. For each of these terms, we identify the relevant privacy strength (low, medium, high).  
+As such, our proposal presents four different use metrics and identifies the corresponding legal terms that could apply to those use metrics.  For each of these terms, we identify the relevant privacy strength (low, medium, high).  For each metric, we propose technological solutions to increase privacy at a minimal tradeoff to accuracy.
 
 #### Pseudonymization
 
@@ -134,9 +135,9 @@ Based on these resources, our project generated the following generalized defini
 
 ### Statistical Metrics
 
-Across the world, location-based apps for COVID-19 use a variety of metrics and dashboards for the analysis of Global Positioning System (GPS) and Bluetooth data. Metrics vary based on regional differences in privacy regulations (see [10] and [11]), however, the underlying usefulness of the location data can be described by four statistical metrics that we present here.   
+Across the world, location-based apps for COVID-19 use a variety of metrics and dashboards to analyze GPS and Bluetooth data. Metrics vary based on regional differences in privacy regulations (see [10] and [11]), however, the underlying usefulness of the location data can be described with four basic metrics.   
 
-For clarity, we present all metrics using GPS coordinates (latitute and longitude) which can be represented in terms of geospatial distances to each other.  Many apps also use Bluetooth data which limits some of the usefulness of the location data, but has an analagous representation.  For example, Metric 1 can be replicated by using Bluetooth receivers at specific locations which correspond to specific GPS coordinates. Additionally, Bluetooth also requires proximity of distance.
+For clarity, we present all metrics using GPS coordinates (latitute and longitude) which can transformed to geospatial distances to each other.  Many apps also use Bluetooth data which limits some of the usefulness of the location data, but has an analagous transformation to distance (i.e., a small distance is required for a Bluetooth connection).  For example, Metric 1 can be replicated by using Bluetooth receivers at specific locations which correspond to specific GPS coordinates. 
 
 #### Metric 1 (Location Risk)
 The number of COVID-19 persons at specific location k on day t
@@ -232,7 +233,9 @@ Privacy Solution:
 * Psuedonymization - Removing all direct and indirect identifiers
 * Control - Access control with governmental authority and increased data security measures
 
+### Conclusion
 
+(Cameron)
 
 ### Repository for Tools and Documents for Hackathon Project
 
