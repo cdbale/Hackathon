@@ -70,7 +70,7 @@ head(full)
     ## 6 1000000002          5 2020-01-26 Seoul    Seon~ publ~     37.6      127. <NA> 
     ## # ... with 13 more variables: birth_year <dbl>, age <chr>, country <chr>,
     ## #   disease <lgl>, infection_case <chr>, infection_order <dbl>,
-    ## #   infected_by <chr>, contact_number <dbl>, symptom_onset_date <date>,
+    ## #   infected_by <chr>, contact_number <chr>, symptom_onset_date <date>,
     ## #   confirmed_date <date>, released_date <date>, deceased_date <date>,
     ## #   state <chr>
 
@@ -376,7 +376,7 @@ of unique trajectories (see the previous plot).
     ## # A tibble: 1 x 6
     ##     Min `2.5%` `50%` `97.5%`   Max specificity
     ##   <dbl>  <dbl> <dbl>   <dbl> <dbl>       <dbl>
-    ## 1     0  0.111  2.74    5.36  5.56           4
+    ## 1     0  0.111  2.78    5.36  5.56           4
 
 <br>
 
@@ -430,7 +430,7 @@ applications.
     ## # A tibble: 1 x 6
     ##     Min `2.5%` `50%` `97.5%`   Max specificity
     ##   <dbl>  <dbl> <dbl>   <dbl> <dbl>       <dbl>
-    ## 1     0   10.5  40.4    64.2  69.7           3
+    ## 1     0   10.6  40.4    64.0  69.7           3
 
 <br>
 
@@ -486,7 +486,7 @@ applications.
     ## # A tibble: 1 x 6
     ##     Min `2.5%` `50%` `97.5%`   Max specificity
     ##   <dbl>  <dbl> <dbl>   <dbl> <dbl>       <dbl>
-    ## 1     0   78.6  390.    643.  705.           2
+    ## 1     0   82.4  394.    643.  705.           2
 
 <br>
 
@@ -538,7 +538,7 @@ points are now nowhere near their original values.
     ## # A tibble: 1 x 6
     ##     Min `2.5%` `50%` `97.5%`   Max specificity
     ##   <dbl>  <dbl> <dbl>   <dbl> <dbl>       <dbl>
-    ## 1     0   964. 3989.   6382. 7094.           1
+    ## 1     0   986. 3995.   6382. 7094.           1
 
 For the sake of completeness, we will round `latitude` and `longitude`
 to zero decimals and examine the effects on trajectory uniqueness and
@@ -579,7 +579,7 @@ Display quantiles for distances shifted when rounding to zero decimals.
     ## # A tibble: 1 x 6
     ##     Min `2.5%`  `50%` `97.5%`    Max specificity
     ##   <dbl>  <dbl>  <dbl>   <dbl>  <dbl>       <dbl>
-    ## 1 3477. 13405. 46554.  64293. 71782.           0
+    ## 1 3477. 15215. 47289.  63875. 71782.           0
 
 <br>
 
@@ -606,10 +606,10 @@ q_stats <- tibble(Min = 0,
                   Max = 0,
                   specificity = 5) %>%
   bind_rows(q4d, q3d, q2d, q1d, q0d) %>%
-  select(specificity, Min, `50%`, Max) %>%
+  select(specificity, `2.5%`, `50%`, `97.5%`) %>%
   group_by(specificity) %>%
-  summarize(stat_txt = paste0(c('Min=', 'Median=', 'Max='),
-                              c(round(Min, 2), round(`50%`, 2), round(Max, 2)),
+  summarize(stat_txt = paste0(c('.025 = ', '.50 = ', '.975 = '),
+                              c(round(`2.5%`, 2), round(`50%`, 2), round(`97.5%`, 2)),
                               collapse = '\n'))
 
 boxes <- full_pd %>%
@@ -637,7 +637,7 @@ annot <- q_stats %>%
   theme_minimal() +
   theme(plot.title = element_text(size = 16), plot.subtitle = element_text(size = 12)) +
   labs(title = 'Uniqueness for Varying Trajectory Sample Size and Location Specificity For COVID-19 Patients\n',
-       subtitle = 'Minimum, Median, and Maximum of Distances Shifted by Rounding (meters)')
+       subtitle = 'Quantiles of Distances Shifted by Rounding (meters)')
   
 grid.arrange(annot, boxes, heights = c(1, 5))
 ```

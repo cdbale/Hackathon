@@ -26,8 +26,8 @@
 library(tidyverse)
 
 # Read in patient epidemiological information and route information.
-p_info <- read_csv(file = 'Data/PatientInfo.csv')
-p_route <- read_csv(file = 'Data/PatientRoute.csv')
+p_info <- read_csv(file = 'Data/PatientInfo.csv', guess_max = 3000)
+p_route <- read_csv(file = 'Data/PatientRoute.csv', guess_max = 3000)
 
 # merge data sets (join epidemiological variables to route information)
 full <- p_route %>%

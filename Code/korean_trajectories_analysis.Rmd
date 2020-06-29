@@ -351,10 +351,10 @@ q_stats <- tibble(Min = 0,
                   Max = 0,
                   specificity = 5) %>%
   bind_rows(q4d, q3d, q2d, q1d, q0d) %>%
-  select(specificity, Min, `50%`, Max) %>%
+  select(specificity, `2.5%`, `50%`, `97.5%`) %>%
   group_by(specificity) %>%
-  summarize(stat_txt = paste0(c('Min=', 'Median=', 'Max='),
-                              c(round(Min, 2), round(`50%`, 2), round(Max, 2)),
+  summarize(stat_txt = paste0(c('.025 = ', '.50 = ', '.975 = '),
+                              c(round(`2.5%`, 2), round(`50%`, 2), round(`97.5%`, 2)),
                               collapse = '\n'))
 
 boxes <- full_pd %>%
@@ -382,7 +382,7 @@ annot <- q_stats %>%
   theme_minimal() +
   theme(plot.title = element_text(size = 16), plot.subtitle = element_text(size = 12)) +
   labs(title = 'Uniqueness for Varying Trajectory Sample Size and Location Specificity For COVID-19 Patients\n',
-       subtitle = 'Minimum, Median, and Maximum of Distances Shifted by Rounding (meters)')
+       subtitle = 'Quantiles of Distances Shifted by Rounding (meters)')
   
 grid.arrange(annot, boxes, heights = c(1, 5))
 ```
