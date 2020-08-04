@@ -147,7 +147,7 @@ Later, we will show that the percentage of unique trajectories increases with th
 
 In other words, we provide the function with the COVID-19 patient data (`trajectory_data`) and specify the number of times (`nits`) we want to sample `num_points` points from each trajectory and calculate the percentage of unique trajectories. (This function assumes that in the data passed to it, `patient_id` uniquely identifies individuals, and the only other columns are `latitude` and `longitude`).
 
-Currently: function calculates uniqueness for all individuals with at least the number of sampled points. Disregards original point ordering (randomly samples points in random order).
+Currently: function calculates uniqueness for all individuals with at least the number of sampled points. Disregards original point ordering, essentially we are comparing the set of points for each individual (order doesn't matter).
 ```{r}
 trajectory_uniqueness <- function(trajectory_data, num_points, nits = 1)
 {
@@ -905,23 +905,6 @@ s_window <- data.frame(
 s_ppp <- ppp(sm$longitude, sm$latitude, c(s_window$min_long, s_window$max_long), c(s_window$min_lat, s_window$max_lat))
 
 intensity(s_ppp)
-```
-
-Birthday problem analysis.
-```{r}
-K <- s_trajs_1d %>%
-  group_by(latitude2, longitude2) %>%
-  summarize(n_obs = n(), .groups = 'drop') %>%
-  summarize(n = n()) %>%
-  pull()
-
-N <- length(unique(s_trajs$patient_id))
-
-t <- 5
-
-M <- K^t
-
-(1 - 1/M) ^ (N - 1)
 ```
 
 ## Important Notes
