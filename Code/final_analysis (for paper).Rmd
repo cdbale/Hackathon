@@ -7,21 +7,25 @@ output: html_document
 
 Install and load packages.
 ```{r}
-#install.packages(c('plyr', 'tidyverse', 'sp', 'patchwork', 'ggridges', 'spatstat', 'ggmap', 'geosphere', 'data.table'))
+#install.packages(c('plyr', 'tidyverse', 'sp', 'patchwork', 'spatstat', 'ggmap', 'geosphere'))
 library(plyr)
 library(tidyverse)
 library(sp)
 library(patchwork)
-library(ggridges)
 library(spatstat)
 library(ggmap)
 library(geosphere)
-library(data.table)
 ```
 
 Load cleaned data.
 ```{r}
 load(file = "../Data/korea_data_clean.RData")
+options(digits = 10)
+```
+
+View latitude and longitude tuples.
+```{r}
+full %>% select(latitude, longitude)
 ```
 
 How many individuals in the data?
@@ -60,14 +64,14 @@ full %>%
   theme(text = element_text(size = 12.5))
 ```
 
-Create data objects for full korea and seoul for individuals with at least five observed location points.
+Create data for full korea data and seoul data only for individuals with at least five observed location points. We could have taken the observations with `province` == Seoul, but for the purposes of our analysis we wanted an area with higher location density. We take points in a rectangular region roughly centered on Seoul.
 ```{r}
 full <- full %>%
   select(patient_id, latitude, longitude) %>%
   group_by(patient_id) %>%
   filter(n() > 4) %>%
   ungroup()
-  
+
 s_full <- full %>%
   filter((longitude > 126.85 & longitude < 127.15) & (latitude > 37.45 & latitude < 37.65)) %>%
   group_by(patient_id) %>%
@@ -86,7 +90,7 @@ s_full %>%
   summarize(n = n())
 ```
 
-How many unique location tuples, and what is the percentage of unique location points?
+How many distinct location tuples, and what is the percentage of them are unique to one individual?
 ```{r}
 (np <- full %>%
   distinct(latitude, longitude) %>%
@@ -106,10 +110,10 @@ nup/np * 100
 What percentage of individuals have a unique location trajectory?
 ```{r}
 split_trajs <- full %>%
-  select(patient_id, latitude, longitude) %>%
   group_by(patient_id) %>%
-  arrange(latitude) %>%
   group_split(.keep = FALSE)
+
+split_trajs <- lapply(split_trajs, function(x) arrange(x, latitude))
 
 length(unique(split_trajs))/length(split_trajs) * 100
 ```
@@ -188,11 +192,22 @@ s_map <- ggmap(get_map(location = c(126.85, 37.45, 127.15, 37.65)),
 print(s_map)
 ```
 
+Define a custom rounding function. Numbers ending in 1 - 4 get rounded down, numbers ending in 5 - 9 get rounded up.
+```{r}
+round2 = function(x, n) {
+  rx = abs(x)*10^n
+  rx = rx + 0.5 + sqrt(.Machine$double.eps)
+  rx = trunc(rx)
+  rx = rx/10^n
+  return(rx)
+}
+```
+
 Create maps showing coarsened trajectories.
 ```{r fig.width = 10, fig.height = 8}
 traj_1d <- full %>%
-  mutate(latitude = round(latitude, digits = 1),
-         longitude = round(longitude, digits = 1))
+  mutate(latitude = round2(latitude, n = 1),
+         longitude = round2(longitude, n = 1))
 
 coarse_k_map <- ggmap(get_map(location = c(126, 33, 130, 38.5)), 
                extent = 'panel', 
@@ -206,8 +221,8 @@ print(coarse_k_map)
 
 ```{r}
 traj_1ds <- s_full %>%
-  mutate(latitude = round(latitude, digits = 1),
-         longitude = round(longitude, digits = 1))
+  mutate(latitude = round2(latitude, n = 1),
+         longitude = round2(longitude, n = 1))
 
 coarse_s_map <- ggmap(get_map(location = c(126.85, 37.45, 127.15, 37.65)), 
                extent = 'panel', 
@@ -224,293 +239,102 @@ Calculating distance between points for individual i (From paper).
 distGeo(c(127.0170, 37.59256), c(127.017, 37.593))
 ```
 
-Define trajectory uniqueness function.
+### Singling-out: Location Coarsening
+
+Define `trajectory_uniqueness` function. Determines the percentage of unique trajectories in a simulated database. The simulated database is created by randomly sampling `num_points` points from each trajectory in `trajectory_data`.
 ```{r}
-trajectory_uniqueness <- function(trajectory_data, num_points, nits = 1)
-{
-  ntrajectories <- length(unique(trajectory_data$patient_id))
-    
-  p_unique <- replicate(n=nits,length(unique(lapply(split(trajectory_data[,.SD[sample(.N,num_points)],by=patient_id],by='patient_id',keep.by=FALSE),setkey,'latitude')))/ntrajectories)
+trajectory_uniqueness <- function(trajectory_data, num_points) {
   
-  return(100 * p_unique)
+  # calculate the total number of trajectories in the data
+  num_trajectories <- length(unique(trajectory_data$patient_id))
+  
+  # randomly sample 'num_points' points from each trajectory
+  # split into list - each element is a sampled trajectory (patient_id is dropped)
+  sampled_data <- trajectory_data %>%
+    group_by(patient_id) %>%
+    slice_sample(n = num_points) %>%
+    group_split(.keep = FALSE)
+  
+  # order each trajectory based on 'latitude' values - necessary for trajectory comparison using 'unique' function
+  sampled_data <- lapply(sampled_data, function(x) arrange(x, latitude))
+  
+  # calculate the percentage of sampled trajectories that are unique
+  percent_unique <- 100 * (length(unique(sampled_data))/num_trajectories)
+  
+  return(as_tibble(percent_unique))
+  
 }
 ```
 
-Calculate trajectory uniqueness for original data (takes several minutes).
+Define `uniqueness_sims` function. Use this function to perform multiple simulations for different numbers of sampled trajectory points (`sample_size`) for a given number of decimals at which locations are measured (`num_dec`).
 ```{r}
-up_5d <- map_dfc(1:5, function(x) trajectory_uniqueness(data.table(full), num_points = x, nits = 100))
-```
-
-Rename variables and shape into long-format.
-```{r}
-pvar_names <- c('one', 'two', 'three', 'four', 'five')
-
-colnames(up_5d) <- pvar_names
-
-up_5d <- up_5d %>%
-  gather(key = 'num_points', value = 'percent_unique') %>%
-  mutate(specificity = 5)
-
-save(up_5d, file = '../Data/pct_unique_5d.RData')
-```
-
-Repeat for d = 4.
-```{r message = FALSE}
-full_4d <- full %>%
-  mutate(latitude2 = round(latitude, digits = 4),
-         distances = distGeo(tibble(longitude, latitude), tibble(longitude, latitude2)),
-         latitude = latitude2) %>%
-  select(-latitude2)
-
-up_4d <- map_dfc(1:5, function(x) trajectory_uniqueness(data.table(full[,c(1, 2, 3)]), num_points = x, nits = 100))
-
-colnames(up_4d) <- pvar_names
-
-up_4d <- up_4d %>%
-  gather(key = 'num_points', value = 'percent_unique') %>%
-  mutate(specificity = 4)
-
-save(up_4d, file = '../Data/pct_unique_4d.RData')
-```
-
-We also make a function to display the quantiles of the distances that observed location points were shifted when we round `latitude` and `longitude`.
-```{r}
-dist_quants <- function(percentage_data){
-  qs <- percentage_data %>%
-    ungroup() %>%
-    summarize(Min = min(distances),
-            `2.5%` = quantile(distances, probs = .025),
-            `50%` = median(distances),
-            `97.5%` = quantile(distances, probs = 0.975),
-            Max = max(distances))
-  return(qs)
+uniqueness_sims <- function(location_data, num_dec, nits = 100, sample_size = 1:5, pvar_names = c('one', 'two', 'three', 'four', 'five')) {
+  
+  # round latitude and longitude to the specified number of decimals
+  loc_data <- location_data %>%
+    mutate_at(.vars = c('latitude', 'longitude'), round2, n = num_dec)
+  
+  # calculate the percentage of unique trajectories in 'nits' simulated databases for each 'sample_size'
+  unique_pcts <- map_dfc(sample_size, function(y) map_dfr(1:nits, function(x) trajectory_uniqueness(loc_data, y)))
+  
+  # assign column names to mark the sample size
+  colnames(unique_pcts) <- pvar_names
+  
+  # transform into long format - one column for the number of sampled points, one for the percentage of unique trajectories, 
+  # and add a column for the number of decimals
+  # each row is for one simulated database, i.e. unique_res[0,] = (number_of_sampled_points, percent_unique_trajectories, number of decimals)
+  unique_res <- unique_pcts %>%
+    gather(key = 'num_points', value = 'percent_unique') %>%
+    mutate(specificity = num_dec)
+  
+  return(unique_res)
+  
 }
 ```
 
-Repeat for d = 3.
-```{r message = FALSE}
-full_3d <- full %>%
-  mutate(latitude2 = round(latitude, digits = 3),
-         longitude2 = round(longitude, digits = 3),
-         distances = distGeo(tibble(longitude, latitude), tibble(longitude2, latitude2)),
-         latitude = latitude2,
-         longitude = longitude2) %>%
-  select(-latitude2, -longitude2)
-
-up_3d <- map_dfc(1:5, function(x) trajectory_uniqueness(data.table(full_3d[,c(1, 2, 3)]), num_points = x, nits = 100))
-
-colnames(up_3d) <- pvar_names
-
-up_3d <- up_3d %>%
-  gather(key = 'num_points', value = 'percent_unique') %>%
-  mutate(specificity = 3)
-
-save(up_3d, file = '../Data/pct_unique_3d.RData')
-```
-
-Repeat for d = 2.
-```{r message = FALSE}
-full_2d <- full %>%
-  mutate(latitude2 = round(latitude, digits = 2),
-         longitude2 = round(longitude, digits = 2),
-         distances = distGeo(tibble(longitude, latitude), tibble(longitude2, latitude2)),
-         latitude = latitude2,
-         longitude = longitude2) %>%
-  select(-latitude2, -longitude2)
-
-up_2d <- map_dfc(1:5, function(x) trajectory_uniqueness(data.table(full_2d[,c(1, 2, 3)]), num_points = x, nits = 100))
-
-colnames(up_2d) <- pvar_names
-
-up_2d <- up_2d %>%
-  gather(key = 'num_points', value = 'percent_unique') %>%
-  mutate(specificity = 2)
-
-save(up_2d, file = '../Data/pct_unique_2d.RData')
-```
-
-Repeat for d = 1.
-```{r message = FALSE}
-full_1d <- full %>%
-  mutate(latitude2 = round(latitude, digits = 1),
-         longitude2 = round(longitude, digits = 1),
-         distances = distGeo(tibble(longitude, latitude), tibble(longitude2, latitude2)),
-         latitude = latitude2,
-         longitude = longitude2) %>%
-  select(-latitude2, -longitude2)
-
-up_1d <- map_dfc(1:5, function(x) trajectory_uniqueness(data.table(full_1d[,c(1, 2, 3)]), num_points = x, nits = 100))
-
-colnames(up_1d) <- pvar_names
-
-up_1d <- up_1d %>%
-  gather(key = 'num_points', value = 'percent_unique') %>%
-  mutate(specificity = 1)
-
-save(up_1d, file = '../Data/pct_unique_1d.RData')
-```
-
-Repeat for d = 0.
-```{r message = FALSE}
-full_0d <- full %>%
-  mutate(latitude2 = round(latitude, digits = 0),
-         longitude2 = round(longitude, digits = 0),
-         distances = distGeo(tibble(longitude, latitude), tibble(longitude2, latitude2)),
-         latitude = latitude2,
-         longitude = longitude2) %>%
-  select(-latitude2, -longitude2)
-
-up_0d <- map_dfc(1:5, function(x) trajectory_uniqueness(data.table(full_0d[,c(1, 2, 3)]), num_points = x, nits = 100))
-
-colnames(up_0d) <- pvar_names
-
-up_0d <- up_0d %>%
-  gather(key = 'num_points', value = 'percent_unique') %>%
-  mutate(specificity = 0)
-
-save(up_0d, file = '../Data/pct_unique_0d.RData')
-```
-
-Load uniqueness calculations (can do this after running the above chunks once).
+Perform simulation 100 times for sample sizes of one to five points, for locations measured from five to zero decimals.
 ```{r}
-# load('../Data/pct_unique_5d.RData')
-# load('../Data/pct_unique_4d.RData')
-# load('../Data/pct_unique_3d.RData')
-# load('../Data/pct_unique_2d.RData')
-# load('../Data/pct_unique_1d.RData')
-# load('../Data/pct_unique_0d.RData')
+uniqueness_results_full <- uniqueness_sims(full, 5) %>%
+  bind_rows(uniqueness_sims(full, 4)) %>%
+  bind_rows(uniqueness_sims(full, 3)) %>%
+  bind_rows(uniqueness_sims(full, 2)) %>%
+  bind_rows(uniqueness_sims(full, 1)) %>%
+  bind_rows(uniqueness_sims(full, 0))
+```
+
+The simulation takes a long time to run, so save the results.
+```{r}
+save(uniqueness_results_full, file = '../Data/uniqueness_results_full.RData')
+```
+
+Load uniqueness calculations for full data (can do this after running the above chunks once).
+```{r}
+load('../Data/uniqueness_results_full.RData')
 ```
 
 Repeat for Seoul.
 ```{r}
-sup_5d <- map_dfc(1:5, function(x) trajectory_uniqueness(data.table(s_full), num_points = x, nits = 100))
-
-colnames(sup_5d) <- pvar_names
-
-sup_5d <- sup_5d %>%
-  gather(key = 'num_points', value = 'percent_unique') %>%
-  mutate(specificity = 5)
-
-save(sup_5d, file = '../Data/s_pu_5d.Rdata')
-
-s_full_4d <- s_full %>%
-  mutate(latitude2 = round(latitude, digits = 4),
-         distances = distGeo(tibble(longitude, latitude), tibble(longitude, latitude2)),
-         latitude = latitude2) %>%
-  select(-latitude2)
-
-sup_4d <- map_dfc(1:5, function(x) trajectory_uniqueness(data.table(s_full_4d[,c(1, 2, 3)]), num_points = x, nits = 100))
-
-colnames(sup_4d) <- pvar_names
-
-sup_4d <- sup_4d %>%
-  gather(key = 'num_points', value = 'percent_unique') %>%
-  mutate(specificity = 4)
-
-save(sup_4d, file = '../Data/s_pu_4d.Rdata')
-
-sq4d <- dist_quants(s_full_4d) %>% mutate(specificity = 4)
-
-s_full_3d <- s_full %>%
-  mutate(latitude2 = round(latitude, digits = 3),
-         longitude2 = round(longitude, digits = 3),
-         distances = distGeo(tibble(longitude, latitude), tibble(longitude2, latitude2)),
-         latitude = latitude2,
-         longitude = longitude2) %>%
-  select(-latitude2, -longitude2)
-
-sup_3d <- map_dfc(1:5, function(x) trajectory_uniqueness(data.table(s_full_3d[,c(1, 2, 3)]), num_points = x, nits = 100))
-
-colnames(sup_3d) <- pvar_names
-
-sup_3d <- sup_3d %>%
-  gather(key = 'num_points', value = 'percent_unique') %>%
-  mutate(specificity = 3)
-
-save(sup_3d, file = '../Data/s_pu_3d.Rdata')
-
-sq3d <- dist_quants(s_full_3d) %>% mutate(specificity = 3)
-
-s_full_2d <- s_full %>%
-  mutate(latitude2 = round(latitude, digits = 2),
-         longitude2 = round(longitude, digits = 2),
-         distances = distGeo(tibble(longitude, latitude), tibble(longitude2, latitude2)),
-         latitude = latitude2,
-         longitude = longitude2) %>%
-  select(-latitude2, -longitude2)
-
-sup_2d <- map_dfc(1:5, function(x) trajectory_uniqueness(data.table(s_full_2d[,c(1, 2, 3)]), num_points = x, nits = 100))
-
-colnames(sup_2d) <- pvar_names
-
-sup_2d <- sup_2d %>%
-  gather(key = 'num_points', value = 'percent_unique') %>%
-  mutate(specificity = 2)
-
-save(sup_2d, file = '../Data/s_pu_2d.Rdata')
-
-sq2d <- dist_quants(s_full_2d) %>% mutate(specificity = 2)
-
-s_full_1d <- s_full %>%
-  mutate(latitude2 = round(latitude, digits = 1),
-         longitude2 = round(longitude, digits = 1),
-         distances = distGeo(tibble(longitude, latitude), tibble(longitude2, latitude2)),
-         latitude = latitude2,
-         longitude = longitude2) %>%
-  select(-latitude2, -longitude2)
-
-sup_1d <- map_dfc(1:5, function(x) trajectory_uniqueness(data.table(s_full_1d[,c(1, 2, 3)]), num_points = x, nits = 100))
-
-colnames(sup_1d) <- pvar_names
-
-sup_1d <- sup_1d %>%
-  gather(key = 'num_points', value = 'percent_unique') %>%
-  mutate(specificity = 1)
-
-save(sup_1d, file = '../Data/s_pu_1d.Rdata')
-
-sq1d <- dist_quants(s_full_1d) %>% mutate(specificity = 1)
-
-s_full_0d <- s_full %>%
-  mutate(latitude2 = round(latitude, digits = 0),
-         longitude2 = round(longitude, digits = 0),
-         distances = distGeo(tibble(longitude, latitude), tibble(longitude2, latitude2)),
-         latitude = latitude2,
-         longitude = longitude2) %>%
-  select(-latitude2, -longitude2)
-
-sup_0d <- map_dfc(1:5, function(x) trajectory_uniqueness(data.table(s_full_0d[,c(1, 2, 3)]), num_points = x, nits = 100))
-
-colnames(sup_0d) <- pvar_names
-
-sup_0d <- sup_0d %>%
-  gather(key = 'num_points', value = 'percent_unique') %>%
-  mutate(specificity = 0)
-
-save(sup_0d, file = '../Data/s_pu_0d.Rdata')
-
-sq0d <- dist_quants(s_full_0d) %>% mutate(specificity = 0)
+uniqueness_results_seoul <- uniqueness_sims(s_full, 5) %>%
+  bind_rows(uniqueness_sims(s_full, 4)) %>%
+  bind_rows(uniqueness_sims(s_full, 3)) %>%
+  bind_rows(uniqueness_sims(s_full, 2)) %>%
+  bind_rows(uniqueness_sims(s_full, 1)) %>%
+  bind_rows(uniqueness_sims(s_full, 0))
 ```
 
-Load uniqueness calculations (can do this after running the above chunk once).
+The simulation takes a long time to run, so save the results.
 ```{r}
-#load('../Data/s_pu_5d.Rdata')
-#load('../Data/s_pu_4d.Rdata')
-#load('../Data/s_pu_3d.Rdata')
-#load('../Data/s_pu_2d.Rdata')
-#load('../Data/s_pu_1d.Rdata')
-#load('../Data/s_pu_0d.Rdata')
+save(uniqueness_results_seoul, file = '../Data/uniqueness_results_seoul.RData')
+```
+
+Load uniqueness calculations for seoul data (can do this after running the above chunk once).
+```{r}
+load('../Data/uniqueness_results_seoul.Rdata')
 ```
 
 Plot uniqueness results for South Korea and Seoul side by side.
 ```{r fig.width = 10, fig.height = 8}
-full_pd <- up_5d %>%
-  bind_rows(up_4d, up_3d, up_2d, up_1d, up_0d)
-
-full_s <- sup_5d %>%
-  bind_rows(sup_4d, sup_3d, sup_2d, sup_1d, sup_0d)
-
-boxes_full <- full_pd %>%
+boxes_full <- uniqueness_results_full %>%
   mutate(specificity = factor(specificity, levels = c('0', '1', '2', '3', '4', '5')),
          num_points = factor(num_points, levels = c('one', 'two', 'three', 'four', 'five'))) %>%
   ggplot(aes(x = specificity, y = percent_unique, fill = factor(num_points))) +
@@ -527,7 +351,7 @@ boxes_full <- full_pd %>%
         text = element_text(size = 12.5)) +
   scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 25))
 
-boxes_s <- full_s %>%
+boxes_s <- uniqueness_results_seoul %>%
   mutate(specificity = factor(specificity, levels = c('0', '1', '2', '3', '4', '5')),
          num_points = factor(num_points, levels = c('one', 'two', 'three', 'four', 'five'))) %>%
   ggplot(aes(x = specificity, y = percent_unique, fill = factor(num_points))) +
@@ -558,44 +382,78 @@ addSmallLegend <- function(myPlot, pointSize = 2, textSize = 10, spaceLegend = 1
 addSmallLegend(boxes_full) | addSmallLegend(boxes_s)
 ```
 
-Calculate the average percentage of unique trajectories across all simulations at each value of d.
+Calculate the average percentage of unique trajectories across all simulations at each value of d for the full data.
 ```{r}
-full_pd %>% group_by(specificity) %>% summarize(avg_pct_unique = mean(percent_unique), .groups = 'drop')
+uniqueness_results_full %>% group_by(specificity) %>% summarize(avg_pct_unique = mean(percent_unique), .groups = 'drop')
 ```
 
+Calculate the average percentage of unique trajectories across all simulations at each value of d for the Seoul data.
 ```{r}
-full_s %>% group_by(specificity) %>% summarize(avg_pct_unique = mean(percent_unique), .groups = 'drop')
+uniqueness_results_seoul %>% group_by(specificity) %>% summarize(avg_pct_unique = mean(percent_unique), .groups = 'drop')
 ```
 
-Distances shifted for full data.
+Calculate the distribution of distances that points are shifted by location coarsening.
 ```{r}
-q4d <- dist_quants(full_4d) %>% mutate(specificity = 4)
-
-q3d <- dist_quants(full_3d) %>% mutate(specificity = 3)
-
-q2d <- dist_quants(full_2d) %>% mutate(specificity = 2)
-
-q1d <- dist_quants(full_1d) %>% mutate(specificity = 1)
-
-q0d <- dist_quants(full_0d) %>% mutate(specificity = 0)
-
-q4d %>% bind_rows(q3d, q2d, q1d, q0d) %>% round(digits = 2)
+distances_shifted <- function(location_data, num_dec) {
+  
+  ds <- location_data %>%
+    mutate(latitude2 = round2(latitude, n = num_dec),
+           longitude2 = round2(longitude, n = num_dec),
+           distances = distGeo(tibble(longitude, latitude), tibble(longitude2, latitude2))) %>%
+    select(distances)
+  
+  return(ds)
+  
+}
 ```
 
-Percent and number of coarsened locations meeting the Singling-out requirement when releasing aggregate counts.
+Calculate distances shifted for location tuples measured from zero to four decimals.
+```{r}
+all_distances <- map_dfc(0:5, function(x) distances_shifted(full, x))
+```
+
+We also make a function to display the quantiles of the distances that observed location points were shifted when we round `latitude` and `longitude`.
+```{r}
+dist_quants <- function(distances){
+  
+  qs <- tibble(
+    Min = min(distances),
+    `2.5%` = quantile(distances, probs = .025),
+    `50%` = median(distances),
+    `97.5%` = quantile(distances, probs = 0.975),
+    Max = max(distances)
+  )
+  
+  return(qs)
+  
+}
+```
+
+Calculate the quantiles of the distributions of distances shifted for locations measured from zero to four decimals.
+```{r}
+map_dfr(all_distances, function(x) dist_quants(x)) %>%
+  mutate(Specificity = 0:5) %>%
+  mutate_at(.vars = c('Min', '2.5%', '50%', '97.5%', 'Max'), round2, n = 2)
+```
+
+### Singling-out: Aggregated Counts
+
+No simulation here - just the percent and number of regions containing at least two location tuples.
 ```{r}
 bin_dist <- function(loc_data, num_dec) {
   
+  # obtain the number of times each location tuple occurs - each tuple marks the center of a region - number of occurrences of a tuple is the number of points originally in that region. Select the variable with the number of occurences for each tuple, and create a variable 'd' to indicate the number of decimals
   loc_data %>%
-    transmute(latitude = round(latitude, num_dec),
-              longitude = round(longitude, num_dec)) %>%
-    group_by(latitude, longitude) %>%
+    mutate(latitude = round2(latitude, num_dec),
+           longitude = round2(longitude, num_dec)) %>%
+    group_by(latitude, longitude) %>% 
     summarize(n = n(), .groups = 'drop') %>%
-    select(n) %>%
+    select(n) %>%                           
     mutate(d = factor(num_dec))
   
 }
 
+# perform calculation on full data for values of d from 5 to 0
 bin_dists <- bin_dist(full, num_dec = 5) %>%
   bind_rows(bin_dist(full, num_dec = 4),
             bin_dist(full, num_dec = 3),
@@ -603,6 +461,8 @@ bin_dists <- bin_dist(full, num_dec = 5) %>%
             bin_dist(full, num_dec = 1),
             bin_dist(full, num_dec = 0))
 
+# create variable indicating regions with more than one location tuple
+# calculate the percentage and number of regions with more than one location tuple
 bin_dists %>%
   mutate(not_singled_out = if_else(n > 1, 1, 0)) %>%
   group_by(d) %>%
@@ -632,24 +492,18 @@ Calculate the areas and side lengths of all regions in the data.
 # designed to take vectors or dataframe columns of latitude and longitude values. Reports the area over which points would
 # have been coarsened to the corresponding lat/long point
 # this function is specific to this data i.e. it is assumed that latitude originally had 5 decimals, and longitude had 4
-poly_area <- function(lat, long) {
+poly_area <- function(loc_data, num_dec) {
   
   # create point data
-  pt <- data.frame(lat, long)
-  
-  # calculate the number of decimal places of the points
-  # the only time the number of decimals isn't equal between lat/long is when no rounding is performed
-  num_dec <- nchar(str_split(as.character(pt[1,1]), pattern = "\\.")[[1]][2])
-  
-  num_dec <- ifelse(is.na(num_dec), 0, num_dec)
+  pt <- loc_data %>% select(-patient_id) %>% mutate_all(round2, n = num_dec)
   
   # get the minimum latitude/longitude values that correspond to the edges of the polygon
-  pt$min_lat <- pt$lat - as.numeric(paste0(".", str_pad("5", num_dec + 1, pad = "0")))
-  pt$min_long <- pt$long - as.numeric(paste0(".", str_pad("5", num_dec + 1, pad = "0")))
+  pt$min_lat <- pt$latitude - as.numeric(paste0(".", str_pad("5", num_dec + 1, pad = "0")))
+  pt$min_long <- pt$longitude - as.numeric(paste0(".", str_pad("5", num_dec + 1, pad = "0")))
   
-  # get the maximum latitude/longitude values that correspond to the edges of the polygon
-  pt$max_lat <- pt$lat + as.numeric(paste0(".", str_pad(str_pad("4", num_dec + 1, pad = "0"), 5, pad = "9", side = "right")))
-  pt$max_long <- pt$long + as.numeric(paste0(".", str_pad(str_pad("4", num_dec + 1, pad = "0"), 4, pad = "9", side = "right")))
+  # get the 'maximum' latitude/longitude values that correspond to the edges of the polygon (going out to 7 decimal places)
+  pt$max_lat <- pt$latitude + as.numeric(paste0(".", str_pad(str_pad("4", num_dec + 1, pad = "0"), 7, pad = "9", side = "right")))
+  pt$max_long <- pt$longitude + as.numeric(paste0(".", str_pad(str_pad("4", num_dec + 1, pad = "0"), 7, pad = "9", side = "right")))
   
   A <- data.frame(apply(pt[,3:6], 1, function(x) 
   {pol <- rbind(c(x[2], x[1]),
@@ -686,92 +540,72 @@ poly_stats <- function(trajectory_data) {
 }
 ```
 
-Calculate areas and side lengths for all regions.
+Calculate areas and side lengths for regions for values of d = 0 to 5.
 ```{r}
-full_4d <- bind_cols(full_4d, poly_area(full_4d$latitude, full_4d$longitude)) %>%
-  ungroup()
-
-full_3d <- bind_cols(full_3d, poly_area(full_3d$latitude, full_3d$longitude)) %>%
-  ungroup()
-
-full_2d <- bind_cols(full_2d, poly_area(full_2d$latitude, full_2d$longitude)) %>%
-  ungroup()
-
-full_1d <- bind_cols(full_1d, poly_area(full_1d$latitude, full_1d$longitude)) %>%
-  ungroup()
-
-full_0d <- bind_cols(full_0d, poly_area(full_0d$latitude, full_0d$longitude)) %>%
-  ungroup()
-```
-
-Calculate average dimensions across regions.
-```{r}
-poly_stats(full_4d) %>%
-  mutate(hor_length = 0, p_area_m = 0, p_area_km = 0) %>%
-  bind_rows(poly_stats(full_3d), 
-            poly_stats(full_2d), 
-            poly_stats(full_1d), 
-            poly_stats(full_0d)) %>%
-  mutate_at(.vars = c('hor_length', 'vert_length', 'p_area_km'), round, digits = 2) %>%
-  mutate_at(.vars = 'p_area_m', round, digits = 1) %>%
-  mutate(specificity = 4:0)
+map_dfr(0:5, function(x) poly_stats(poly_area(full, num_dec = x))) %>%
+  mutate(number_decimals = 0:5) %>% 
+  mutate_at(.vars = c('hor_length', 'vert_length', 'p_area_km'), round2, n = 2) %>%
+  mutate_at(.vars = 'p_area_m', round2, n = 1)
 ```
 
 ### Assessing Inference for Trajectories
 
-Function to simulate an adversary having external information location tuples corresponding to an individual i and linking them to location trajectories in Y to determine the COVID-19 status of individual i.
+Function to simulate an adversary having external information location tuples corresponding to COVID-19 positive individuals in a database. The adversary links these external information tuples to all compatible trajectories in Y. The disease status would then be inferred based on the proportion of individuals with compatible trajectories that are COVID-19 positive. This proportion is used to to calculate the left-hand side (LHS) of the inference condition from the paper.
 ```{r}
 inference_simulation <- function(loc_data, ci_length, prior = 0.01) {
 
-  pos <- 0
+  # number of COVID-19 positive individuals in the database
+  pos_status_data <- tibble()
   
-  # loop to guarantee some COVID-19 positive individuals in the data
+  # loop to guarantee we assign some COVID-19 positive individuals in the data
   # simulate 1% of individuals in Y as COVID-19 positive
+  while(nrow(pos_status_data) == 0) {
   
-  while(pos == 0) {
-    
+    # add covid status to location data
     status_data <- loc_data %>% 
       group_by(patient_id) %>%
       mutate(status = sample(c(0, 1), size = 1, prob = c(.99, .01))) %>%
       ungroup()
     
-    ptv_inds <- status_data %>%
+    # data corresponding to covid positive individuals (while loop condition just needs the number of rows > 0)
+    pos_status_data <- status_data %>%
       filter(status == 1)
-    
-    pos <- nrow(ptv_inds)
-    
+
   }
-  
-  # sample external information tuples from each COVID-19 positive individal trajectory
-  ci <- ptv_inds %>%
+
+  # sample 'ci_length' tuples from the trajectory of each COVID-19 positive individual
+  # these tuples will represent the external information available to an adversary
+  # the sample from each trajectory is a dataframe stored as a list element in 'ext_inf'
+  ext_inf <- pos_status_data %>%
     group_by(patient_id) %>%
     sample_n(size = ci_length) %>%
     group_split()
-  
-  # remove patient id and status from external information
-  ci1 <- lapply(ci, function(x) x %>% select(-patient_id, -status))
 
-  # summarize the number of times each latitude/longitude tuple occurs in each external information set
-  ci2 <- lapply(ci1, function(x) x %>% group_by(latitude, longitude) %>% summarize(n = n(), .groups = 'drop'))
-  
-  # find the 'matches' or the individuals whose trajectories contain the external information tuples
-  matches <- lapply(ci2, function(y) match_df(status_data, y, on = c('latitude', 'longitude')) %>%
-                                     group_by(patient_id, latitude, longitude, status) %>%
-                                     summarize(n1 = n(), .groups = 'drop'))
+  # remove patient id and status from external information samples
+  ext_inf2 <- lapply(ext_inf, function(x) x %>% select(-patient_id, -status))
 
-  # join the matches data to the external information tuples data
-  links <- lapply(1:length(ci2), function(x) left_join(matches[[x]], ci2[[x]], by = c('latitude', 'longitude')))
+  # summarize each external information dataframe so that it contains one row for each unique external information tuple
+  # in a given sample - add a variable for how many times each unique tuple occurred in the original sample
+  ext_inf3 <- lapply(ext_inf2, function(x) x %>% group_by(latitude, longitude) %>% summarize(n = n(), .groups = 'drop'))
 
-  # filter for the individuals whose trajectories are supersets of the external information (based on the tuples occurring at least as many times as in the external information)
-  links2 <- lapply(1:length(links), function(x) links[[x]] %>% group_by(patient_id) %>% filter(n1 >= n & n() >= nrow(ci2[[x]])) %>% ungroup())
+  # extract the tuples from the original full database that match the tuples in the external information samples - perform a similar summary on the matches - create one row for each unique tuple on the basis of `patient_id` with the number of times each tuple occurs in that patient's trajectory
+  matches <- lapply(ext_inf3, function(y) match_df(status_data, y, on = c('latitude', 'longitude')) %>%
+                                          group_by(patient_id, latitude, longitude, status) %>%
+                                          summarize(n1 = n(), .groups = 'drop'))
 
-  # reduce to list of patient_id and COVID-19 status
+  # merge the variables for patient_id, disease_status, and the number of times a given tuple occurs in the patient trajectory with the external information samples - we can now compare the number of times tuples occur in the external information sample to the number of times they occur in a patient's trajectory
+  links <- lapply(1:length(ext_inf3), function(x) left_join(matches[[x]], ext_inf3[[x]], by = c('latitude', 'longitude')))
+
+  # filter for the patients with trajectories that contain the same unique tuples occurring at least as many times as the original external information sample
+  links2 <- lapply(1:length(links), function(x) links[[x]] %>% group_by(patient_id) %>% filter(n1 >= n & n() >= nrow(ext_inf3[[x]])) %>% ungroup())
+
+  # reduce to list of dataframes with patient_ids and COVID-19 status corresponding to the trajectories that were linked to each external information sample
   covid_count <- lapply(links2, function(x) distinct(x, patient_id, status))
 
-  # calculate left hand side of inference condition for each COVID-19 positive individual
+  # calculate left hand side of the inference condition for each external information sample
   inf_props <- map_dfr(covid_count, function(x) x %>% summarize(cond = mean(status) - prior))
 
-  # average the left hand side of the inference condition across COVID-19 positive individuals
+  # average the left hand side of the inference condition across all COVID-19 positive individuals
   avg_cond <- inf_props %>% summarize(avg_cond = mean(cond))
   
   return(avg_cond)
@@ -784,7 +618,7 @@ Function to perform simulation one hundred times each for one to five external i
 inf_calc <- function(location_data, num_dec, nits = 100, sample_sizes = 1:5, pvar_names = c('one', 'two', 'three', 'four', 'five')) {
   
   loc_data <- location_data %>%
-    mutate_at(.vars = c('latitude', 'longitude'), round, digits = num_dec)
+    mutate_at(.vars = c('latitude', 'longitude'), round2, n = num_dec)
   
   props <- map_dfc(1:5, function(y) map_dfr(1:100, function(x) inference_simulation(loc_data, y)))
   
@@ -808,13 +642,16 @@ inf_results <- inf_calc(full, 5) %>%
   bind_rows(inf_calc(full, 1)) %>%
   bind_rows(inf_calc(full, 0))
 
+save(inf_results, file = '../Data/inf_results_trajectories_full.RData')
+load('../Data/inf_results_trajectories_full.RData')
+
 i_p <- inf_results %>%
   mutate(specificity = factor(specificity, levels = c('0', '1', '2', '3', '4', '5')),
          num_points = factor(num_points, levels = c('one', 'two', 'three', 'four', 'five'))) %>%
   ggplot(aes(x = specificity, y = inf_prop, fill = factor(num_points))) +
   geom_boxplot(position = position_dodge(width = 0.5)) +
   labs(x = 'Number of decimals d',
-       y = 'Individual-level Average of LHS of Inference Condition',
+       y = 'Average LHS Inference Condition Across Positive Individuals',
        fill = '# EI Tuples\n',
        title = 'Full Data') +
   scale_fill_discrete(labels = c('One', 'Two', 'Three', 'Four', 'Five'),
@@ -835,6 +672,9 @@ inf_results_s <- inf_calc(s_full, 5) %>%
   bind_rows(inf_calc(s_full, 2)) %>%
   bind_rows(inf_calc(s_full, 1)) %>%
   bind_rows(inf_calc(s_full, 0))
+
+save(inf_results_s, file = '../Data/inf_results_trajectories_seoul.RData')
+load(file = '../Data/inf_results_trajectories_seoul.RData')
 
 i_p_s <- inf_results_s %>%
   mutate(specificity = factor(specificity, levels = c('0', '1', '2', '3', '4', '5')),
@@ -867,47 +707,49 @@ Function to simulate an adversary having access to one location tuple correspond
 ```{r}
 inf_counts <- function(location_data, num_dec, prior = 0.01) {
   
-  num_pos <- 0
+  # dataframe for COVID-19 positive individuals
+  pos_status_data <- tibble()
   
-  # while loop to guarantee COVID-19 positive individuals
-  while(num_pos == 0) {
-    
+  # loop to guarantee we assign some COVID-19 positive individuals in the data
+  # simulate 1% of individuals in Y as COVID-19 positive
+  while(nrow(pos_status_data) == 0) {
+  
+    # add covid status to location data
     status_data <- location_data %>% 
       group_by(patient_id) %>%
       mutate(status = sample(c(0, 1), size = 1, prob = c(.99, .01))) %>%
       ungroup()
     
-    ptv_inds <- status_data %>%
+    # data corresponding to covid positive individuals (while loop condition just needs the number of rows > 0)
+    pos_status_data <- status_data %>%
       filter(status == 1)
-    
-    num_pos <- nrow(ptv_inds)
-    
+
   }
   
   # round data to specified value of d
-  c_status_data <- status_data %>%
-    mutate_at(.vars = c('latitude', 'longitude'), round, digits = num_dec)
+  rounded_status_data <- status_data %>%
+    mutate_at(.vars = c('latitude', 'longitude'), round2, n = num_dec)
   
-  # get all distinct location tuples for COVID-19 positive individuals
-  covid_locs <- c_status_data %>%
+  # get all distinct location tuples for all COVID-19 positive individuals
+  covid_locs <- rounded_status_data %>%
     filter(status == 1) %>%
     distinct(latitude, longitude)
   
-  # calculate the left hand side of the inference condition for each region visited by COVID-19 positive individuals
-  count_props <- match_df(c_status_data, covid_locs, on = c('latitude', 'longitude')) %>%
+  # get the regions from the rounded data that match the regions visited by the COVID-19 positive individuals
+  # for each distinct region, calculate the LHS of the inference condition (the proportion of individuals with tuples in the region - prior
+  count_props <- match_df(rounded_status_data, covid_locs, on = c('latitude', 'longitude')) %>%
     group_by(latitude, longitude) %>%
     summarize(inc_inf = mean(status) - prior, .groups = 'drop')
 
-  # merge the calculations for the inference condition to the data for COVID-19 positive individuals
-  # calculate the average of the inference condition across the regions visited by each individual - produces an average across   regions for each individual
-  ind_avg_count_props <- ptv_inds %>%
-    mutate_at(.vars = c('latitude', 'longitude'), round, digits = num_dec) %>%
-    distinct(patient_id, latitude, longitude) %>%
-    left_join(count_props, by = c('latitude', 'longitude')) %>%
+  # calculate the average of the LHS of the inference condition across the regions visited by each individual
+  ind_avg_count_props <- pos_status_data %>%
+    mutate_at(.vars = c('latitude', 'longitude'), round2, n = num_dec) %>% # round data corresponding to positive individuals
+    distinct(patient_id, latitude, longitude) %>% # take the distinct regions visited by each positive individual
+    left_join(count_props, by = c('latitude', 'longitude')) %>% # merge the LHS of inference condition calculated for each region in `count_props`
     group_by(patient_id) %>%
-    summarize(avg_inc_inf = mean(inc_inf), .groups = 'drop') %>%
+    summarize(avg_inc_inf = mean(inc_inf), .groups = 'drop') %>% # calculate the average across regions for each individual
     select(avg_inc_inf) %>%
-    mutate(specificity = num_dec)
+    mutate(specificity = num_dec) # add variable indicating the number of decimals
     
   return(ind_avg_count_props)
     
@@ -919,11 +761,14 @@ Perform simulation 100 times for Full data for d = 0,1,2,3,4,5 and plot results.
 inf_count_dists <- map_dfr(0:5, function(y) map_dfr(1:100, function(x) inf_counts(full, y))) %>%
   mutate(specificity = factor(specificity, levels = c('0', '1', '2', '3', '4', '5')))
 
+save(inf_count_dists, file = '../Data/counts_inference_full.RData')
+load('../Data/counts_inference_full.RData')
+
 count_inf_full <- inf_count_dists %>%
   ggplot(aes(x = specificity, y = avg_inc_inf)) +
   geom_boxplot() +
   labs(x = 'Number of decimals',
-       y = 'Individual Level Average of LHS of Condition (2.5)',
+       y = 'Individual Level Average of LHS of Condition',
        title = 'Full Data') +
   scale_y_continuous(limits = c(-.05, 1), breaks = seq(0, 1, by = .25)) +
   theme(text = element_text(size = 12.5))
@@ -933,6 +778,9 @@ Repeat for Seoul.
 ```{r}
 inf_count_dists_s <- map_dfr(0:5, function(y) map_dfr(1:100, function(x) inf_counts(s_full, y))) %>%
   mutate(specificity = factor(specificity, levels = c('0', '1', '2', '3', '4', '5')))
+
+save(inf_count_dists_s, file = '../Data/counts_inference_seoul.RData')
+load('../Data/counts_inference_seoul.RData')
 
 count_inf_s <- inf_count_dists_s %>%
   ggplot(aes(x = specificity, y = avg_inc_inf)) +
@@ -948,5 +796,11 @@ count_inf_s <- inf_count_dists_s %>%
 
 ```{r fig.width=11, fig.height=7}
 count_inf_full | count_inf_s
+```
+
+```{r}
+inf_count_dists_s %>%
+  filter(specificity == 1) %>%
+  summarize(m = max(avg_inc_inf))
 ```
 
