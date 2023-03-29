@@ -294,17 +294,17 @@ uniqueness_sims <- function(location_data, num_dec, nits = 100, sample_size = 1:
 
 Perform simulation 100 times for sample sizes of one to five points, for locations measured from five to zero decimals.
 ```{r}
-uniqueness_results_full <- uniqueness_sims(full, 5) %>%
-  bind_rows(uniqueness_sims(full, 4)) %>%
-  bind_rows(uniqueness_sims(full, 3)) %>%
-  bind_rows(uniqueness_sims(full, 2)) %>%
-  bind_rows(uniqueness_sims(full, 1)) %>%
-  bind_rows(uniqueness_sims(full, 0))
+# uniqueness_results_full <- uniqueness_sims(full, 5) %>%
+#   bind_rows(uniqueness_sims(full, 4)) %>%
+#   bind_rows(uniqueness_sims(full, 3)) %>%
+#   bind_rows(uniqueness_sims(full, 2)) %>%
+#   bind_rows(uniqueness_sims(full, 1)) %>%
+#   bind_rows(uniqueness_sims(full, 0))
 ```
 
 The simulation takes a long time to run, so save the results.
 ```{r}
-save(uniqueness_results_full, file = '../Data/uniqueness_results_full.RData')
+# save(uniqueness_results_full, file = '../Data/uniqueness_results_full.RData')
 ```
 
 Load uniqueness calculations for full data (can do this after running the above chunks once).
@@ -314,17 +314,17 @@ load('../Data/uniqueness_results_full.RData')
 
 Repeat for Seoul.
 ```{r}
-uniqueness_results_seoul <- uniqueness_sims(s_full, 5) %>%
-  bind_rows(uniqueness_sims(s_full, 4)) %>%
-  bind_rows(uniqueness_sims(s_full, 3)) %>%
-  bind_rows(uniqueness_sims(s_full, 2)) %>%
-  bind_rows(uniqueness_sims(s_full, 1)) %>%
-  bind_rows(uniqueness_sims(s_full, 0))
+# uniqueness_results_seoul <- uniqueness_sims(s_full, 5) %>%
+#   bind_rows(uniqueness_sims(s_full, 4)) %>%
+#   bind_rows(uniqueness_sims(s_full, 3)) %>%
+#   bind_rows(uniqueness_sims(s_full, 2)) %>%
+#   bind_rows(uniqueness_sims(s_full, 1)) %>%
+#   bind_rows(uniqueness_sims(s_full, 0))
 ```
 
 The simulation takes a long time to run, so save the results.
 ```{r}
-save(uniqueness_results_seoul, file = '../Data/uniqueness_results_seoul.RData')
+# save(uniqueness_results_seoul, file = '../Data/uniqueness_results_seoul.RData')
 ```
 
 Load uniqueness calculations for seoul data (can do this after running the above chunk once).
@@ -548,6 +548,203 @@ map_dfr(0:5, function(x) poly_stats(poly_area(full, num_dec = x))) %>%
   mutate_at(.vars = 'p_area_m', round2, n = 1)
 ```
 
+### Linkability Risk measure for Location Coarsening
+
+```{r}
+linkability_risk <- function(trajectory_data, num_points) {
+  
+  # calculate the total number of trajectories in the data
+  num_trajectories <- length(unique(trajectory_data$patient_id))
+  
+  # randomly sample 'num_points' points from each trajectory
+  # split into list - each element is a sampled trajectory (patient_id is dropped)
+  sampled_data <- trajectory_data %>%
+    group_by(patient_id) %>%
+    slice_sample(n = num_points) %>%
+    group_split(.keep = FALSE)
+  
+  # order each trajectory based on 'latitude' values - necessary for trajectory comparison using 'unique' function
+  sampled_data <- lapply(sampled_data, function(x) arrange(x, latitude))
+  
+  num_occurrences <- tabulate(match(sampled_data, unique(sampled_data)))
+  
+  # num_occurrences <- f3(sampled_data)
+  
+  # # logical vector of duplicated trajectories - these are the ones for which k >= 2
+  # is_duplicate <- duplicated(sampled_data)
+  # 
+  # # select duplicated trajectories
+  # duplicates <- sampled_data[is_duplicate]
+  # 
+  # # reduce to subset of unique duplicated trajectories
+  # unique_duplicates <- unique(duplicates)
+  # 
+  # # for each unique duplicated trajectory, count how many times it occurs in the full sampled data
+  # num_occurrences <- c()
+  # if (length(unique_duplicates) > 0){
+  #   for (i in 1:length(unique_duplicates)){
+  #     num_matches <- 0
+  #     for (j in 1:length(sampled_data)){
+  #       if (all(unique_duplicates[[i]] == sampled_data[[j]])){
+  #         num_matches <- num_matches + 1
+  #       }
+  #     }
+  #     num_occurrences <- c(num_occurrences, num_matches)
+  #   }
+  # }
+  
+  return(num_occurrences[num_occurrences>1])
+  
+}
+```
+
+Linkability risk simulations.
+```{r}
+linkability_sims <- function(location_data, num_dec, nits = 100, sample_size = 1:5, pvar_names = c('one', 'two', 'three', 'four', 'five')) {
+  
+  # round latitude and longitude to the specified number of decimals
+  loc_data <- location_data %>%
+    mutate_at(.vars = c('latitude', 'longitude'), round2, n = num_dec)
+  
+  # calculate the percentage of unique trajectories in 'nits' simulated databases for each 'sample_size'
+  unique_pcts <- map(sample_size, function(y) map(1:nits, function(x) linkability_risk(loc_data, y)))
+  
+  vecs <- tibble()
+  for (i in seq_along(sample_size)){
+    lvec <- c()
+    for (j in 1:nits){
+      lvec <- c(lvec, unique_pcts[[i]][[j]])
+    }
+    specificity <- rep(num_dec, times=length(lvec))
+    num_points <- rep(i, times=length(lvec))
+    new_df <- bind_cols("num_points"=num_points, "k"=lvec, "specificity"=specificity)
+    vecs <- bind_rows(vecs, new_df)
+  }
+  
+  return(vecs)
+  
+}
+```
+
+```{r}
+t1 <- Sys.time()
+nits=100
+linkability_results_full <- linkability_sims(full, 5, nits=nits) %>%
+  bind_rows(linkability_sims(full, 4, nits=nits)) %>%
+  bind_rows(linkability_sims(full, 3, nits=nits)) %>%
+  bind_rows(linkability_sims(full, 2, nits=nits)) %>%
+  bind_rows(linkability_sims(full, 1, nits=nits)) %>%
+  bind_rows(linkability_sims(full, 0, nits=nits))
+t2 <- Sys.time()
+t1-t2
+
+save(linkability_results_full, file = '../Data/linkability_results_full.RData')
+```
+
+```{r}
+linkability_results_seoul <- linkability_sims(s_full, 5, nits=nits) %>%
+  bind_rows(linkability_sims(s_full, 4, nits=nits)) %>%
+  bind_rows(linkability_sims(s_full, 3, nits=nits)) %>%
+  bind_rows(linkability_sims(s_full, 2, nits=nits)) %>%
+  bind_rows(linkability_sims(s_full, 1, nits=nits)) %>%
+  bind_rows(linkability_sims(s_full, 0, nits=nits))
+
+save(linkability_results_seoul, file = '../Data/linkability_results_seoul.RData')
+```
+
+```{r}
+linkability_results_seoul
+```
+
+Plot of linkability simulation results for full data.
+```{r fig.width = 10, fig.height = 8}
+linkability_plot_full <- linkability_results_full %>%
+  mutate(specificity = factor(specificity, levels = c('0', '1', '2', '3', '4', '5')),
+         num_points = factor(num_points, levels = c(1, 2, 3, 4, 5), labels=c("one", "two", "three", "four", "five"))) %>%
+  ggplot(aes(x = specificity, y = 1/k, fill = factor(num_points))) +
+  geom_boxplot(position = position_dodge(width = 0.5)) +
+  labs(x = 'Number of Decimals',
+       y = '1/k',
+       fill = '# Tuples\n',
+       title = 'Full Data') +
+  scale_fill_discrete(labels = c('One', 'Two', 'Three', 'Four', 'Five'),
+                      guide = guide_legend(reverse = TRUE)) +
+  theme(legend.position = "none",
+        text = element_text(size = 12.5))
+
+linkability_plot_seoul <- linkability_results_seoul %>%
+  mutate(specificity = factor(specificity, levels = c('0', '1', '2', '3', '4', '5')),
+         num_points = factor(num_points, levels = c(1, 2, 3, 4, 5), labels=c("one", "two", "three", "four", "five"))) %>%
+  ggplot(aes(x = specificity, y = 1/k, fill = factor(num_points))) +
+  geom_boxplot(position = position_dodge(width = 0.5)) +
+  labs(x = 'Number of Decimals',
+       y = '',
+       fill = '# Tuples\n',
+       title = 'Seoul Only') +
+  scale_fill_discrete(labels = c('One', 'Two', 'Three', 'Four', 'Five'),
+                      guide = guide_legend(reverse = TRUE)) +
+  theme(axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        text = element_text(size = 12.5))
+
+
+addSmallLegend(linkability_plot_full) | addSmallLegend(linkability_plot_seoul)
+```
+
+### Linkability Risk measure for Aggregating to Counts
+
+```{r fig.width = 10, fig.height = 8}
+lr_agg_full <- bin_dists %>%
+  mutate(d = factor(d, levels = c(0,1,2,3,4,5)),
+         k = n) %>%
+  filter(k > 1) %>%
+  ggplot(aes(x=d, y=1/k)) +
+  geom_boxplot() +
+  labs(x = "Number of Decimals",
+       title = "Full Data") +
+  theme(text = element_text(size = 12.5))
+
+lr_agg_seoul <- bin_dists_s %>%
+  mutate(d = factor(d, levels = c(0,1,2,3,4,5)),
+         k = n) %>%
+  filter(k > 1) %>%
+  ggplot(aes(x=d, y=1/k)) +
+  geom_boxplot() +
+  labs(x = "Number of Decimals",
+       y = "",
+       title = "Seoul Only") +
+  theme(axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        text = element_text(size = 12.5))
+
+addSmallLegend(lr_agg_full) | addSmallLegend(lr_agg_seoul)
+```
+
+```{r}
+bin_dists_s %>%
+  filter(n > 1) %>%
+  group_by(d) %>%
+  select(n) %>%
+  summarize(inverse_n = 1/n) %>%
+  table()
+
+seoul_agg_bins <- bin_dists_s %>%
+  filter(n > 1) %>%
+  select(n) %>%
+  summarize(inverse_n = 1/n) %>%
+  table()
+
+# amount in top bins
+seoul_agg_bins[(length(seoul_agg_bins)-9):length(seoul_agg_bins)]
+
+# remainder
+sum(seoul_agg_bins[1:(length(seoul_agg_bins)-10)])
+```
+
+
+
+
+
 ### Assessing Inference for Trajectories
 
 Function to simulate an adversary having external information location tuples corresponding to COVID-19 positive individuals in a database. The adversary links these external information tuples to all compatible trajectories in Y. The disease status would then be inferred based on the proportion of individuals with compatible trajectories that are COVID-19 positive. This proportion is used to to calculate the left-hand side (LHS) of the inference condition from the paper.
@@ -635,14 +832,14 @@ inf_calc <- function(location_data, num_dec, nits = 100, sample_sizes = 1:5, pva
 
 Inference analysis for full data.
 ```{r fig.width=6, fig.height=6}
-inf_results <- inf_calc(full, 5) %>%
-  bind_rows(inf_calc(full, 4)) %>%
-  bind_rows(inf_calc(full, 3)) %>%
-  bind_rows(inf_calc(full, 2)) %>%
-  bind_rows(inf_calc(full, 1)) %>%
-  bind_rows(inf_calc(full, 0))
+# inf_results <- inf_calc(full, 5) %>%
+#   bind_rows(inf_calc(full, 4)) %>%
+#   bind_rows(inf_calc(full, 3)) %>%
+#   bind_rows(inf_calc(full, 2)) %>%
+#   bind_rows(inf_calc(full, 1)) %>%
+#   bind_rows(inf_calc(full, 0))
 
-save(inf_results, file = '../Data/inf_results_trajectories_full.RData')
+# save(inf_results, file = '../Data/inf_results_trajectories_full.RData')
 load('../Data/inf_results_trajectories_full.RData')
 
 i_p <- inf_results %>%
@@ -666,14 +863,14 @@ addSmallLegend(i_p)
 
 Inference analysis for Seoul data.
 ```{r fig.width=6, fig.height=6}
-inf_results_s <- inf_calc(s_full, 5) %>%
-  bind_rows(inf_calc(s_full, 4)) %>%
-  bind_rows(inf_calc(s_full, 3)) %>%
-  bind_rows(inf_calc(s_full, 2)) %>%
-  bind_rows(inf_calc(s_full, 1)) %>%
-  bind_rows(inf_calc(s_full, 0))
+# inf_results_s <- inf_calc(s_full, 5) %>%
+#   bind_rows(inf_calc(s_full, 4)) %>%
+#   bind_rows(inf_calc(s_full, 3)) %>%
+#   bind_rows(inf_calc(s_full, 2)) %>%
+#   bind_rows(inf_calc(s_full, 1)) %>%
+#   bind_rows(inf_calc(s_full, 0))
 
-save(inf_results_s, file = '../Data/inf_results_trajectories_seoul.RData')
+# save(inf_results_s, file = '../Data/inf_results_trajectories_seoul.RData')
 load(file = '../Data/inf_results_trajectories_seoul.RData')
 
 i_p_s <- inf_results_s %>%
@@ -758,10 +955,10 @@ inf_counts <- function(location_data, num_dec, prior = 0.01) {
 
 Perform simulation 100 times for Full data for d = 0,1,2,3,4,5 and plot results.
 ```{r}
-inf_count_dists <- map_dfr(0:5, function(y) map_dfr(1:100, function(x) inf_counts(full, y))) %>%
-  mutate(specificity = factor(specificity, levels = c('0', '1', '2', '3', '4', '5')))
+# inf_count_dists <- map_dfr(0:5, function(y) map_dfr(1:100, function(x) inf_counts(full, y))) %>%
+#   mutate(specificity = factor(specificity, levels = c('0', '1', '2', '3', '4', '5')))
 
-save(inf_count_dists, file = '../Data/counts_inference_full.RData')
+# save(inf_count_dists, file = '../Data/counts_inference_full.RData')
 load('../Data/counts_inference_full.RData')
 
 count_inf_full <- inf_count_dists %>%
@@ -776,10 +973,10 @@ count_inf_full <- inf_count_dists %>%
 
 Repeat for Seoul.
 ```{r}
-inf_count_dists_s <- map_dfr(0:5, function(y) map_dfr(1:100, function(x) inf_counts(s_full, y))) %>%
-  mutate(specificity = factor(specificity, levels = c('0', '1', '2', '3', '4', '5')))
-
-save(inf_count_dists_s, file = '../Data/counts_inference_seoul.RData')
+# inf_count_dists_s <- map_dfr(0:5, function(y) map_dfr(1:100, function(x) inf_counts(s_full, y))) %>%
+#   mutate(specificity = factor(specificity, levels = c('0', '1', '2', '3', '4', '5')))
+# 
+# save(inf_count_dists_s, file = '../Data/counts_inference_seoul.RData')
 load('../Data/counts_inference_seoul.RData')
 
 count_inf_s <- inf_count_dists_s %>%
