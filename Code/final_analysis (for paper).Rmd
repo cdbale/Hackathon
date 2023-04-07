@@ -15,6 +15,8 @@ library(patchwork)
 library(spatstat)
 library(ggmap)
 library(geosphere)
+library(sdcMicro)
+library(FNN)
 ```
 
 Load cleaned data.
@@ -169,12 +171,19 @@ s_ppp <- ppp(sm$longitude, sm$latitude, c(s_window$min_long, s_window$max_long),
 intensity(s_ppp)
 ```
 
+```{r}
+api_google <- "AIzaSyBTsLPmrNS8KUCi7ZDsCt_tIGFlL14Tbm0"
+
+register_google(key=api_google)
+```
+
+
 Output maps of the full dataset and Seoul.
 ```{r fig.width = 10, fig.height = 8}
-k_map <- ggmap(get_map(location = c(126, 33, 130, 38.5)), 
+k_map <- ggmap(get_map(location = c(125, 33, 131, 38.5)), 
                extent = 'panel', 
                base_layer = ggplot(full, aes(x = longitude, y = latitude))) +
-  geom_point(alpha = 0.4, color = 'blue') +
+  geom_point(alpha = 0.4, color = 'blue', size=2) +
   labs(x = 'Longitude',
        y = 'Latitude')
 
@@ -185,7 +194,7 @@ print(k_map)
 s_map <- ggmap(get_map(location = c(126.85, 37.45, 127.15, 37.65)), 
                extent = 'panel', 
                base_layer = ggplot(s_full, aes(x = longitude, y = latitude))) +
-  geom_point(alpha = 0.4, color = 'blue') +
+  geom_point(alpha = 0.4, color = 'blue', size=2) +
   labs(x = '',
        y = '')
 
@@ -209,10 +218,10 @@ traj_1d <- full %>%
   mutate(latitude = round2(latitude, n = 1),
          longitude = round2(longitude, n = 1))
 
-coarse_k_map <- ggmap(get_map(location = c(126, 33, 130, 38.5)), 
+coarse_k_map <- ggmap(get_map(location = c(125, 33, 131, 38.5)), 
                extent = 'panel', 
                base_layer = ggplot(traj_1d, aes(x = longitude, y = latitude))) +
-  geom_point(alpha = 0.4, color = 'blue') +
+  geom_point(alpha = 0.4, color = 'blue', size=2) +
   labs(x = 'Longitude',
        y = 'Latitude')
 
@@ -227,7 +236,39 @@ traj_1ds <- s_full %>%
 coarse_s_map <- ggmap(get_map(location = c(126.85, 37.45, 127.15, 37.65)), 
                extent = 'panel', 
                base_layer = ggplot(traj_1ds, aes(x = longitude, y = latitude))) +
-  geom_point(color = 'blue') +
+  geom_point(color = 'blue', size=3) +
+  labs(x = '',
+       y = '')
+
+print(coarse_s_map)
+```
+
+
+```{r}
+traj_1ds <- s_full %>%
+  mutate(latitude = round2(latitude, n = 2),
+         longitude = round2(longitude, n = 2))
+
+coarse_s_map <- ggmap(get_map(location = c(126.85, 37.45, 127.15, 37.65)), 
+               extent = 'panel', 
+               base_layer = ggplot(traj_1ds, aes(x = longitude, y = latitude))) +
+  geom_point(color = 'blue', size=3) +
+  labs(x = '',
+       y = '')
+
+print(coarse_s_map)
+```
+
+
+```{r}
+traj_1ds <- s_full %>%
+  mutate(latitude = round2(latitude, n = 0),
+         longitude = round2(longitude, n = 0))
+
+coarse_s_map <- ggmap(get_map(location = c(126, 37, 128, 38)), 
+               extent = 'panel', 
+               base_layer = ggplot(traj_1ds, aes(x = longitude, y = latitude))) +
+  geom_point(color = 'blue', size=3) +
   labs(x = '',
        y = '')
 
@@ -238,6 +279,42 @@ Calculating distance between points for individual i (From paper).
 ```{r}
 distGeo(c(127.0170, 37.59256), c(127.017, 37.593))
 ```
+
+Perform microaggregation on latitude and longitude variables for k = 5.
+```{r}
+agg_full <- microaggregation(full, variables=c("latitude", "longitude"), aggr=5)
+
+agg_full$mx 
+```
+
+
+```{r fig.width = 10, fig.height = 8}
+agg_map <- ggmap(get_map(location = c(125, 33, 131, 38.5)), 
+               extent = 'panel', 
+               base_layer = ggplot(agg_full$mx, aes(x = longitude, y = latitude))) +
+  geom_point(alpha = 0.4, color = 'blue', size=2) +
+  labs(x = 'Longitude',
+       y = 'Latitude')
+
+print(agg_map)
+```
+
+
+
+```{r}
+agg_s <- microaggregation(s_full, variables=c("latitude", "longitude"), aggr=5)
+
+agg_s_map <- ggmap(get_map(location = c(126.85, 37.45, 127.15, 37.65)), 
+               extent = 'panel', 
+               base_layer = ggplot(agg_s$mx, aes(x = longitude, y = latitude))) +
+  geom_point(color = 'blue', size=2) +
+  labs(x = '',
+       y = '')
+
+print(agg_s_map)
+```
+
+
 
 ### Singling-out: Location Coarsening
 
@@ -392,7 +469,33 @@ Calculate the average percentage of unique trajectories across all simulations a
 uniqueness_results_seoul %>% group_by(specificity) %>% summarize(avg_pct_unique = mean(percent_unique), .groups = 'drop')
 ```
 
-Calculate the distribution of distances that points are shifted by location coarsening.
+```{r}
+ma_k <- c(2, 5, 10, 15, 20, 25)
+```
+
+
+Singling out analysis for microaggregation.
+```{r}
+ma_data_sets <- lapply(ma_k, function(x) microaggregation(full, variables=c("latitude", "longitude"), aggr=x)$mx)
+
+mas_data_sets <- lapply(ma_k, function(x) microaggregation(s_full, variables=c("latitude", "longitude"), aggr=x)$mx)
+```
+
+UTILITY EVALUTAION
+
+Function to calculate the distances shifted by microaggregation.
+```{r}
+micro_distances_shifted <- function(X, mX){
+  ds <- X %>%
+    bind_cols(mX) %>%
+    mutate(distances = distGeo(tibble(`longitude...3`, `latitude...2`), tibble(`longitude...5`, `latitude...4`))) %>%
+    pull(distances)
+  
+  return(ds)
+}
+```
+
+Function to calculate the distribution of distances that points are shifted by location coarsening.
 ```{r}
 distances_shifted <- function(location_data, num_dec) {
   
@@ -407,9 +510,17 @@ distances_shifted <- function(location_data, num_dec) {
 }
 ```
 
+Calculate distances shifted for microaggregated data.
+```{r}
+ma_distances <- map(ma_data_sets, function(x) micro_distances_shifted(full, x))
+
+mas_distances <- map(mas_data_sets, function(x) micro_distances_shifted(s_full, x))
+```
+
 Calculate distances shifted for location tuples measured from zero to four decimals.
 ```{r}
-all_distances <- map_dfc(0:5, function(x) distances_shifted(full, x))
+full_distances <- map_dfc(0:5, function(x) distances_shifted(full, x))
+seoul_distances <- map_dfc(0:5, function(x) distances_shifted(s_full, x))
 ```
 
 We also make a function to display the quantiles of the distances that observed location points were shifted when we round `latitude` and `longitude`.
@@ -429,124 +540,145 @@ dist_quants <- function(distances){
 }
 ```
 
+Calculate the quantiles of the distributions of distances shifted by microaggregation for the full data.
+```{r}
+map_dfr(ma_distances, dist_quants)  %>%
+  round(digits=2) %>%
+  select(`2.5%`, `50%`, `97.5%`)
+```
+
+Calculate the quantiles of the distributions of distances shifted by microaggregation for the Seoul data.
+```{r}
+map_dfr(mas_distances, dist_quants) %>%
+  round(digits=2) %>%
+  select(`2.5%`, `50%`, `97.5%`)
+```
+
+
 Calculate the quantiles of the distributions of distances shifted for locations measured from zero to four decimals.
 ```{r}
-map_dfr(all_distances, function(x) dist_quants(x)) %>%
+map_dfr(full_distances, function(x) dist_quants(x)) %>%
   mutate(Specificity = 0:5) %>%
   mutate_at(.vars = c('Min', '2.5%', '50%', '97.5%', 'Max'), round2, n = 2)
 ```
 
-### Singling-out: Aggregated Counts
-
-No simulation here - just the percent and number of regions containing at least two location tuples.
 ```{r}
-bin_dist <- function(loc_data, num_dec) {
-  
-  # obtain the number of times each location tuple occurs - each tuple marks the center of a region - number of occurrences of a tuple is the number of points originally in that region. Select the variable with the number of occurences for each tuple, and create a variable 'd' to indicate the number of decimals
-  loc_data %>%
-    mutate(latitude = round2(latitude, num_dec),
-           longitude = round2(longitude, num_dec)) %>%
-    group_by(latitude, longitude) %>% 
-    summarize(n = n(), .groups = 'drop') %>%
-    select(n) %>%                           
-    mutate(d = factor(num_dec))
-  
-}
-
-# perform calculation on full data for values of d from 5 to 0
-bin_dists <- bin_dist(full, num_dec = 5) %>%
-  bind_rows(bin_dist(full, num_dec = 4),
-            bin_dist(full, num_dec = 3),
-            bin_dist(full, num_dec = 2),
-            bin_dist(full, num_dec = 1),
-            bin_dist(full, num_dec = 0))
-
-# create variable indicating regions with more than one location tuple
-# calculate the percentage and number of regions with more than one location tuple
-bin_dists %>%
-  mutate(not_singled_out = if_else(n > 1, 1, 0)) %>%
-  group_by(d) %>%
-  summarize(pct_nso = mean(not_singled_out) * 100,
-            num_nso = sum(not_singled_out), .groups = 'drop')
+map_dfr(seoul_distances, function(x) dist_quants(x)) %>%
+  mutate(Specificity = 0:5) %>%
+  mutate_at(.vars = c('Min', '2.5%', '50%', '97.5%', 'Max'), round2, n = 2)
 ```
 
-Repeat for Seoul.
-```{r}
-bin_dists_s <- bin_dist(s_full, num_dec = 5) %>%
-  bind_rows(bin_dist(s_full, num_dec = 4),
-            bin_dist(s_full, num_dec = 3),
-            bin_dist(s_full, num_dec = 2),
-            bin_dist(s_full, num_dec = 1),
-            bin_dist(s_full, num_dec = 0))
+<!-- ### Singling-out: Aggregated Counts -->
 
-bin_dists_s %>%
-  mutate(not_singled_out = if_else(n > 1, 1, 0)) %>%
-  group_by(d) %>%
-  summarize(pct_nso = mean(not_singled_out) * 100,
-            num_nso = sum(not_singled_out), .groups = 'drop')
-```
+<!-- No simulation here - just the percent and number of regions containing at least two location tuples. -->
+<!-- ```{r} -->
+<!-- bin_dist <- function(loc_data, num_dec) { -->
 
-Calculate the areas and side lengths of all regions in the data.
-```{r}
-# make a function for calculating polygon boundaries and area
-# designed to take vectors or dataframe columns of latitude and longitude values. Reports the area over which points would
-# have been coarsened to the corresponding lat/long point
-# this function is specific to this data i.e. it is assumed that latitude originally had 5 decimals, and longitude had 4
-poly_area <- function(loc_data, num_dec) {
-  
-  # create point data
-  pt <- loc_data %>% select(-patient_id) %>% mutate_all(round2, n = num_dec)
-  
-  # get the minimum latitude/longitude values that correspond to the edges of the polygon
-  pt$min_lat <- pt$latitude - as.numeric(paste0(".", str_pad("5", num_dec + 1, pad = "0")))
-  pt$min_long <- pt$longitude - as.numeric(paste0(".", str_pad("5", num_dec + 1, pad = "0")))
-  
-  # get the 'maximum' latitude/longitude values that correspond to the edges of the polygon (going out to 7 decimal places)
-  pt$max_lat <- pt$latitude + as.numeric(paste0(".", str_pad(str_pad("4", num_dec + 1, pad = "0"), 7, pad = "9", side = "right")))
-  pt$max_long <- pt$longitude + as.numeric(paste0(".", str_pad(str_pad("4", num_dec + 1, pad = "0"), 7, pad = "9", side = "right")))
-  
-  A <- data.frame(apply(pt[,3:6], 1, function(x) 
-  {pol <- rbind(c(x[2], x[1]),
-                c(x[2], x[3]),
-                c(x[4], x[3]),
-                c(x[4], x[1]),
-                c(x[2], x[1]))
-  areaPolygon(pol)}))
-  
-  names(A) <- "area"
-  
-  # vertical (or latitudinal) lengths are equal, only need to take one
-  A$vert_length <- distGeo(data.frame(pt$max_long, pt$max_lat), data.frame(pt$max_long, pt$min_lat))
-  
-  # horizontal (or longitudinal) lengths are slightly different, the northern side will be slightly shorter
-  # we take the average of the two
-  A$hor_length <- apply(data.frame(distGeo(data.frame(pt$max_long, pt$max_lat), data.frame(pt$min_long, pt$max_lat)),
-                                   distGeo(data.frame(pt$max_long, pt$min_lat), data.frame(pt$min_long, pt$min_lat))),
-                        1, mean)
-  
-  return(A)
-  
-}
-```
+<!--   # obtain the number of times each location tuple occurs - each tuple marks the center of a region - number of occurrences of a tuple is the number of points originally in that region. Select the variable with the number of occurences for each tuple, and create a variable 'd' to indicate the number of decimals -->
+<!--   loc_data %>% -->
+<!--     mutate(latitude = round2(latitude, num_dec), -->
+<!--            longitude = round2(longitude, num_dec)) %>% -->
+<!--     group_by(latitude, longitude) %>%  -->
+<!--     summarize(n = n(), .groups = 'drop') %>% -->
+<!--     select(n) %>%                            -->
+<!--     mutate(d = factor(num_dec)) -->
 
-Function to calculate average side lengths and area for regions.
-```{r}
-poly_stats <- function(trajectory_data) {
-  trajectory_data %>%
-  summarize(hor_length = mean(hor_length),
-            vert_length = mean(vert_length),
-            p_area_m = mean(area),
-            p_area_km = mean(area)/1000000)
-}
-```
+<!-- } -->
 
-Calculate areas and side lengths for regions for values of d = 0 to 5.
-```{r}
-map_dfr(0:5, function(x) poly_stats(poly_area(full, num_dec = x))) %>%
-  mutate(number_decimals = 0:5) %>% 
-  mutate_at(.vars = c('hor_length', 'vert_length', 'p_area_km'), round2, n = 2) %>%
-  mutate_at(.vars = 'p_area_m', round2, n = 1)
-```
+<!-- # perform calculation on full data for values of d from 5 to 0 -->
+<!-- bin_dists <- bin_dist(full, num_dec = 5) %>% -->
+<!--   bind_rows(bin_dist(full, num_dec = 4), -->
+<!--             bin_dist(full, num_dec = 3), -->
+<!--             bin_dist(full, num_dec = 2), -->
+<!--             bin_dist(full, num_dec = 1), -->
+<!--             bin_dist(full, num_dec = 0)) -->
+
+<!-- # create variable indicating regions with more than one location tuple -->
+<!-- # calculate the percentage and number of regions with more than one location tuple -->
+<!-- bin_dists %>% -->
+<!--   mutate(not_singled_out = if_else(n > 1, 1, 0)) %>% -->
+<!--   group_by(d) %>% -->
+<!--   summarize(pct_nso = mean(not_singled_out) * 100, -->
+<!--             num_nso = sum(not_singled_out), .groups = 'drop') -->
+<!-- ``` -->
+
+<!-- Repeat for Seoul. -->
+<!-- ```{r} -->
+<!-- bin_dists_s <- bin_dist(s_full, num_dec = 5) %>% -->
+<!--   bind_rows(bin_dist(s_full, num_dec = 4), -->
+<!--             bin_dist(s_full, num_dec = 3), -->
+<!--             bin_dist(s_full, num_dec = 2), -->
+<!--             bin_dist(s_full, num_dec = 1), -->
+<!--             bin_dist(s_full, num_dec = 0)) -->
+
+<!-- bin_dists_s %>% -->
+<!--   mutate(not_singled_out = if_else(n > 1, 1, 0)) %>% -->
+<!--   group_by(d) %>% -->
+<!--   summarize(pct_nso = mean(not_singled_out) * 100, -->
+<!--             num_nso = sum(not_singled_out), .groups = 'drop') -->
+<!-- ``` -->
+
+<!-- Calculate the areas and side lengths of all regions in the data. -->
+<!-- ```{r} -->
+<!-- # make a function for calculating polygon boundaries and area -->
+<!-- # designed to take vectors or dataframe columns of latitude and longitude values. Reports the area over which points would -->
+<!-- # have been coarsened to the corresponding lat/long point -->
+<!-- # this function is specific to this data i.e. it is assumed that latitude originally had 5 decimals, and longitude had 4 -->
+<!-- poly_area <- function(loc_data, num_dec) { -->
+
+<!--   # create point data -->
+<!--   pt <- loc_data %>% select(-patient_id) %>% mutate_all(round2, n = num_dec) -->
+
+<!--   # get the minimum latitude/longitude values that correspond to the edges of the polygon -->
+<!--   pt$min_lat <- pt$latitude - as.numeric(paste0(".", str_pad("5", num_dec + 1, pad = "0"))) -->
+<!--   pt$min_long <- pt$longitude - as.numeric(paste0(".", str_pad("5", num_dec + 1, pad = "0"))) -->
+
+<!--   # get the 'maximum' latitude/longitude values that correspond to the edges of the polygon (going out to 7 decimal places) -->
+<!--   pt$max_lat <- pt$latitude + as.numeric(paste0(".", str_pad(str_pad("4", num_dec + 1, pad = "0"), 7, pad = "9", side = "right"))) -->
+<!--   pt$max_long <- pt$longitude + as.numeric(paste0(".", str_pad(str_pad("4", num_dec + 1, pad = "0"), 7, pad = "9", side = "right"))) -->
+
+<!--   A <- data.frame(apply(pt[,3:6], 1, function(x)  -->
+<!--   {pol <- rbind(c(x[2], x[1]), -->
+<!--                 c(x[2], x[3]), -->
+<!--                 c(x[4], x[3]), -->
+<!--                 c(x[4], x[1]), -->
+<!--                 c(x[2], x[1])) -->
+<!--   areaPolygon(pol)})) -->
+
+<!--   names(A) <- "area" -->
+
+<!--   # vertical (or latitudinal) lengths are equal, only need to take one -->
+<!--   A$vert_length <- distGeo(data.frame(pt$max_long, pt$max_lat), data.frame(pt$max_long, pt$min_lat)) -->
+
+<!--   # horizontal (or longitudinal) lengths are slightly different, the northern side will be slightly shorter -->
+<!--   # we take the average of the two -->
+<!--   A$hor_length <- apply(data.frame(distGeo(data.frame(pt$max_long, pt$max_lat), data.frame(pt$min_long, pt$max_lat)), -->
+<!--                                    distGeo(data.frame(pt$max_long, pt$min_lat), data.frame(pt$min_long, pt$min_lat))), -->
+<!--                         1, mean) -->
+
+<!--   return(A) -->
+
+<!-- } -->
+<!-- ``` -->
+
+<!-- Function to calculate average side lengths and area for regions. -->
+<!-- ```{r} -->
+<!-- poly_stats <- function(trajectory_data) { -->
+<!--   trajectory_data %>% -->
+<!--   summarize(hor_length = mean(hor_length), -->
+<!--             vert_length = mean(vert_length), -->
+<!--             p_area_m = mean(area), -->
+<!--             p_area_km = mean(area)/1000000) -->
+<!-- } -->
+<!-- ``` -->
+
+<!-- Calculate areas and side lengths for regions for values of d = 0 to 5. -->
+<!-- ```{r} -->
+<!-- map_dfr(0:5, function(x) poly_stats(poly_area(full, num_dec = x))) %>% -->
+<!--   mutate(number_decimals = 0:5) %>%  -->
+<!--   mutate_at(.vars = c('hor_length', 'vert_length', 'p_area_km'), round2, n = 2) %>% -->
+<!--   mutate_at(.vars = 'p_area_m', round2, n = 1) -->
+<!-- ``` -->
 
 ### Linkability Risk measure for Location Coarsening
 
@@ -627,33 +759,33 @@ linkability_sims <- function(location_data, num_dec, nits = 100, sample_size = 1
 ```
 
 ```{r}
-t1 <- Sys.time()
-nits=100
-linkability_results_full <- linkability_sims(full, 5, nits=nits) %>%
-  bind_rows(linkability_sims(full, 4, nits=nits)) %>%
-  bind_rows(linkability_sims(full, 3, nits=nits)) %>%
-  bind_rows(linkability_sims(full, 2, nits=nits)) %>%
-  bind_rows(linkability_sims(full, 1, nits=nits)) %>%
-  bind_rows(linkability_sims(full, 0, nits=nits))
-t2 <- Sys.time()
-t1-t2
+# t1 <- Sys.time()
+# nits=100
+# linkability_results_full <- linkability_sims(full, 5, nits=nits) %>%
+#   bind_rows(linkability_sims(full, 4, nits=nits)) %>%
+#   bind_rows(linkability_sims(full, 3, nits=nits)) %>%
+#   bind_rows(linkability_sims(full, 2, nits=nits)) %>%
+#   bind_rows(linkability_sims(full, 1, nits=nits)) %>%
+#   bind_rows(linkability_sims(full, 0, nits=nits))
+# t2 <- Sys.time()
+# t1-t2
 
-save(linkability_results_full, file = '../Data/linkability_results_full.RData')
+# save(linkability_results_full, file = '../Data/linkability_results_full.RData')
+
+load("../Data/linkability_results_full.RData")
 ```
 
 ```{r}
-linkability_results_seoul <- linkability_sims(s_full, 5, nits=nits) %>%
-  bind_rows(linkability_sims(s_full, 4, nits=nits)) %>%
-  bind_rows(linkability_sims(s_full, 3, nits=nits)) %>%
-  bind_rows(linkability_sims(s_full, 2, nits=nits)) %>%
-  bind_rows(linkability_sims(s_full, 1, nits=nits)) %>%
-  bind_rows(linkability_sims(s_full, 0, nits=nits))
+# linkability_results_seoul <- linkability_sims(s_full, 5, nits=nits) %>%
+#   bind_rows(linkability_sims(s_full, 4, nits=nits)) %>%
+#   bind_rows(linkability_sims(s_full, 3, nits=nits)) %>%
+#   bind_rows(linkability_sims(s_full, 2, nits=nits)) %>%
+#   bind_rows(linkability_sims(s_full, 1, nits=nits)) %>%
+#   bind_rows(linkability_sims(s_full, 0, nits=nits))
+# 
+# save(linkability_results_seoul, file = '../Data/linkability_results_seoul.RData')
 
-save(linkability_results_seoul, file = '../Data/linkability_results_seoul.RData')
-```
-
-```{r}
-linkability_results_seoul
+load("../Data/linkability_results_seoul.RData")
 ```
 
 Plot of linkability simulation results for full data.
@@ -670,7 +802,8 @@ linkability_plot_full <- linkability_results_full %>%
   scale_fill_discrete(labels = c('One', 'Two', 'Three', 'Four', 'Five'),
                       guide = guide_legend(reverse = TRUE)) +
   theme(legend.position = "none",
-        text = element_text(size = 12.5))
+        text = element_text(size = 12.5)) +
+  scale_y_continuous(limits = c(0, 0.5), breaks = seq(0, 0.5, by = 0.1))
 
 linkability_plot_seoul <- linkability_results_seoul %>%
   mutate(specificity = factor(specificity, levels = c('0', '1', '2', '3', '4', '5')),
@@ -685,61 +818,121 @@ linkability_plot_seoul <- linkability_results_seoul %>%
                       guide = guide_legend(reverse = TRUE)) +
   theme(axis.text.y = element_blank(),
         axis.ticks.y = element_blank(),
-        text = element_text(size = 12.5))
+        text = element_text(size = 12.5)) +
+  scale_y_continuous(limits = c(0, 0.5), breaks = seq(0, 0.5, by = 0.1))
 
 
 addSmallLegend(linkability_plot_full) | addSmallLegend(linkability_plot_seoul)
 ```
 
-### Linkability Risk measure for Aggregating to Counts
 
-```{r fig.width = 10, fig.height = 8}
-lr_agg_full <- bin_dists %>%
-  mutate(d = factor(d, levels = c(0,1,2,3,4,5)),
-         k = n) %>%
-  filter(k > 1) %>%
-  ggplot(aes(x=d, y=1/k)) +
-  geom_boxplot() +
-  labs(x = "Number of Decimals",
-       title = "Full Data") +
-  theme(text = element_text(size = 12.5))
+### Linkability Risk for Microaggregation
 
-lr_agg_seoul <- bin_dists_s %>%
-  mutate(d = factor(d, levels = c(0,1,2,3,4,5)),
-         k = n) %>%
-  filter(k > 1) %>%
-  ggplot(aes(x=d, y=1/k)) +
-  geom_boxplot() +
-  labs(x = "Number of Decimals",
-       y = "",
-       title = "Seoul Only") +
-  theme(axis.text.y = element_blank(),
-        axis.ticks.y = element_blank(),
-        text = element_text(size = 12.5))
-
-addSmallLegend(lr_agg_full) | addSmallLegend(lr_agg_seoul)
-```
-
+Compute 1/k for all points
 ```{r}
-bin_dists_s %>%
-  filter(n > 1) %>%
-  group_by(d) %>%
-  select(n) %>%
-  summarize(inverse_n = 1/n) %>%
-  table()
+ma_linkability_risk_calc <- function(X, ds_num, cluster_size){
+  temp <- X %>%
+    group_by(latitude, longitude) %>%
+    summarize(risk = 1/n(), .groups='drop') %>%
+    mutate(k=cluster_size)
+  
+  return(temp)
+}
 
-seoul_agg_bins <- bin_dists_s %>%
-  filter(n > 1) %>%
-  select(n) %>%
-  summarize(inverse_n = 1/n) %>%
-  table()
+ma_full_link <- map_dfr(1:length(ma_data_sets), function(x) ma_linkability_risk_calc(ma_data_sets[[x]], x, ma_k[x]))
 
-# amount in top bins
-seoul_agg_bins[(length(seoul_agg_bins)-9):length(seoul_agg_bins)]
+ma_full_link <- ma_full_link %>%
+  mutate(k <- factor(k, levels=rev(ma_k)))
 
-# remainder
-sum(seoul_agg_bins[1:(length(seoul_agg_bins)-10)])
+ma_s_link <- map_dfr(1:length(mas_data_sets), function(x) ma_linkability_risk_calc(mas_data_sets[[x]], x, ma_k[x]))
+
+ma_s_link <- ma_s_link %>%
+  mutate(k <- factor(k, levels=rev(ma_k)))
 ```
+
+Plot
+```{r fig.width = 10, fig.height = 8}
+full_ma_link_plot <- ma_full_link %>%
+  ggplot(aes(x=as.factor(k), y=risk)) +
+  geom_boxplot() +
+  labs(x = 'k',
+       y = '1/k',
+       title = 'Full Data') +
+  scale_x_discrete(limits=rev) +
+  scale_y_continuous(limits = c(0, 0.5), breaks = seq(0, 0.5, by = 0.1))
+  
+
+s_ma_link_plot <- ma_s_link %>%
+  ggplot(aes(x=as.factor(k), y=risk)) +
+  geom_boxplot() +
+  labs(x = 'k',
+       y = '',
+       title = 'Seoul Only') +
+  scale_x_discrete(limits=rev) +
+  theme(axis.text.y = element_blank(),
+        axis.ticks.y = element_blank()) +
+  scale_y_continuous(limits = c(0, 0.5), breaks = seq(0, 0.5, by = 0.1))
+
+(addSmallLegend(linkability_plot_full) + addSmallLegend(linkability_plot_seoul)) / (full_ma_link_plot + s_ma_link_plot)
+```
+
+
+
+
+
+
+
+
+
+<!-- ### Linkability Risk measure for Aggregating to Counts -->
+
+<!-- ```{r fig.width = 10, fig.height = 8} -->
+<!-- lr_agg_full <- bin_dists %>% -->
+<!--   mutate(d = factor(d, levels = c(0,1,2,3,4,5)), -->
+<!--          k = n) %>% -->
+<!--   filter(k > 1) %>% -->
+<!--   ggplot(aes(x=d, y=1/k)) + -->
+<!--   geom_boxplot() + -->
+<!--   labs(x = "Number of Decimals", -->
+<!--        title = "Full Data") + -->
+<!--   theme(text = element_text(size = 12.5)) -->
+
+<!-- lr_agg_seoul <- bin_dists_s %>% -->
+<!--   mutate(d = factor(d, levels = c(0,1,2,3,4,5)), -->
+<!--          k = n) %>% -->
+<!--   filter(k > 1) %>% -->
+<!--   ggplot(aes(x=d, y=1/k)) + -->
+<!--   geom_boxplot() + -->
+<!--   labs(x = "Number of Decimals", -->
+<!--        y = "", -->
+<!--        title = "Seoul Only") + -->
+<!--   theme(axis.text.y = element_blank(), -->
+<!--         axis.ticks.y = element_blank(), -->
+<!--         text = element_text(size = 12.5)) -->
+
+<!-- addSmallLegend(lr_agg_full) | addSmallLegend(lr_agg_seoul) -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- bin_dists_s %>% -->
+<!--   filter(n > 1) %>% -->
+<!--   group_by(d) %>% -->
+<!--   select(n) %>% -->
+<!--   summarize(inverse_n = 1/n) %>% -->
+<!--   table() -->
+
+<!-- seoul_agg_bins <- bin_dists_s %>% -->
+<!--   filter(n > 1) %>% -->
+<!--   select(n) %>% -->
+<!--   summarize(inverse_n = 1/n) %>% -->
+<!--   table() -->
+
+<!-- # amount in top bins -->
+<!-- seoul_agg_bins[(length(seoul_agg_bins)-9):length(seoul_agg_bins)] -->
+
+<!-- # remainder -->
+<!-- sum(seoul_agg_bins[1:(length(seoul_agg_bins)-10)]) -->
+<!-- ``` -->
 
 
 
@@ -803,9 +996,9 @@ inference_simulation <- function(loc_data, ci_length, prior = 0.01) {
   inf_props <- map_dfr(covid_count, function(x) x %>% summarize(cond = mean(status) - prior))
 
   # average the left hand side of the inference condition across all COVID-19 positive individuals
-  avg_cond <- inf_props %>% summarize(avg_cond = mean(cond))
+  max_cond <- inf_props %>% summarize(max_cond = max(cond))
   
-  return(avg_cond)
+  return(max_cond)
   
 }
 ```
@@ -838,7 +1031,7 @@ Inference analysis for full data.
 #   bind_rows(inf_calc(full, 2)) %>%
 #   bind_rows(inf_calc(full, 1)) %>%
 #   bind_rows(inf_calc(full, 0))
-
+# 
 # save(inf_results, file = '../Data/inf_results_trajectories_full.RData')
 load('../Data/inf_results_trajectories_full.RData')
 
@@ -848,15 +1041,15 @@ i_p <- inf_results %>%
   ggplot(aes(x = specificity, y = inf_prop, fill = factor(num_points))) +
   geom_boxplot(position = position_dodge(width = 0.5)) +
   labs(x = 'Number of decimals d',
-       y = 'Average LHS Inference Condition Across Positive Individuals',
+       y = 'Max Inference Condition Across Positive Individuals',
        fill = '# EI Tuples\n',
        title = 'Full Data') +
   scale_fill_discrete(labels = c('One', 'Two', 'Three', 'Four', 'Five'),
                       guide = guide_legend(reverse = TRUE)) +
   theme(legend.position = c(0.025, 0.95),
         legend.justification = c('left', 'top'),
-        legend.box.just = 'left',
-        text = element_text(size = 12.5))
+        legend.box.just = 'left') +
+  scale_y_continuous(limits = c(-0.01, 1.0), breaks = seq(0, 1.0, by = 0.25))
 
 addSmallLegend(i_p)
 ```
@@ -869,7 +1062,7 @@ Inference analysis for Seoul data.
 #   bind_rows(inf_calc(s_full, 2)) %>%
 #   bind_rows(inf_calc(s_full, 1)) %>%
 #   bind_rows(inf_calc(s_full, 0))
-
+# 
 # save(inf_results_s, file = '../Data/inf_results_trajectories_seoul.RData')
 load(file = '../Data/inf_results_trajectories_seoul.RData')
 
@@ -889,7 +1082,8 @@ i_p_s <- inf_results_s %>%
         legend.box.just = 'left',
         text = element_text(size = 12.5),
         axis.text.y = element_blank(),
-        axis.ticks.y = element_blank())
+        axis.ticks.y = element_blank()) +
+  scale_y_continuous(limits = c(-0.01, 1.0), breaks = seq(0, 1.0, by = 0.25))
 
 addSmallLegend(i_p_s)
 ```
@@ -898,13 +1092,101 @@ addSmallLegend(i_p_s)
 addSmallLegend(i_p) | addSmallLegend(i_p_s)
 ```
 
-### Inference analysis for Counts.
+### Inference Analysis for Microaggregation
 
-Function to simulate an adversary having access to one location tuple corresponding to individual i and linking that tuple to the count for that tuple in an aggregated counts database to determine the COVID-19 status of that individual.
+Steps:
+
+(1) Assign 1% of individuals a positive covid-19 status.
+(2) Remove longitudinal links (conceptual)
+(3) Simulate subsets of locations that are external information to the adversary
+(4) Perform matching for adversary - link each external information tuple to
+its nearest-neighbor microaggregated tuple in the protected data. Posterior
+probability is the proportion of matched points with COVID-19 status = 1.
+
+(1) Assign 1% of individuals a positive covid-19 status.
 ```{r}
-inf_counts <- function(location_data, num_dec, prior = 0.01) {
+# number of COVID-19 positive individuals in the database
+pos_status_data <- tibble()
   
-  # dataframe for COVID-19 positive individuals
+# loop to guarantee we assign some COVID-19 positive individuals in the data
+# simulate 1% of individuals in Y as COVID-19 positive
+while(nrow(pos_status_data) == 0) {
+  
+  # add covid status to location data
+  status_data <- full %>% 
+    group_by(patient_id) %>%
+    mutate(status = sample(c(0, 1), size = 1, prob = c(.99, .01))) %>%
+    ungroup()
+    
+  # data corresponding to covid positive individuals (while loop condition just needs the number of rows > 0)
+  pos_status_data <- status_data %>%
+    filter(status == 1)
+
+}
+```
+
+
+(2) Remove longitudinal links (conceptual)
+(3) Sample a location tuple from the trajectory of each covid-positive person.
+```{r}
+status <- status_data %>% pull(status)
+
+ei <- status_data %>%
+  filter(status==1) %>%
+  group_by(patient_id) %>%
+  slice_sample(n=1) %>%
+  ungroup() %>%
+  select(latitude, longitude)
+
+ei
+```
+
+For each protected data set, compute the posterior probability of inference for each EI tuple.
+```{r}
+max_post_prob <- function(protected_data, ids, ei_tuples, disease_status, prior){
+  
+  # add status to locations for probability computation later
+  ds <- protected_data %>% mutate(status=disease_status, pid=ids)
+  
+  # select just latitude and longitude for the tree
+  # tree_data <- ds %>% select(latitude, longitude)
+  
+  # get indexes of the nearest neighbor to each point
+  neighbor_indexes <- get.knnx(data=protected_data[,c('latitude', 'longitude')], query=ei_tuples[,c('latitude', 'longitude')], k=1, algorithm="kd_tree")$nn.index
+  
+  # calculate posterior probability
+  posterior_probs <- c()
+  proportion_target <- c()
+  for(i in seq_along(neighbor_indexes)){
+    matched <- ds %>% slice(neighbor_indexes[i])
+  
+    matched_k <- ds %>%
+      filter(latitude==matched$latitude, longitude==matched$longitude)
+
+    posterior_probs <- c(posterior_probs, mean(matched_k$status)-prior)
+    
+    proportion_target <- c(proportion_target, mean(matched_k$pid == (ei_tuples$patient_id)[i]))
+      
+  }
+  
+  return(tibble(Inf_condition=max(posterior_probs), prop_target=mean(proportion_target)))
+  
+}
+
+# lapply(ma_data_sets, function(x) max_post_prob(x, ei, status))
+
+# GOAL: the average of the LHS across simulated EI sets for each protected
+# data set.
+```
+
+
+Combine everything. Compute the distribution of the maximum of the LHS of the inference condition.
+```{r}
+ma_inference_simulation <- function(original_data, protected_data_sets, kvals, prior=0.01){
+  
+  ### (1) Assign 1% of individuals a positive covid-19 status.
+  
+  # number of COVID-19 positive individuals in the database
   pos_status_data <- tibble()
   
   # loop to guarantee we assign some COVID-19 positive individuals in the data
@@ -912,7 +1194,7 @@ inf_counts <- function(location_data, num_dec, prior = 0.01) {
   while(nrow(pos_status_data) == 0) {
   
     # add covid status to location data
-    status_data <- location_data %>% 
+    status_data <- original_data %>% 
       group_by(patient_id) %>%
       mutate(status = sample(c(0, 1), size = 1, prob = c(.99, .01))) %>%
       ungroup()
@@ -923,81 +1205,187 @@ inf_counts <- function(location_data, num_dec, prior = 0.01) {
 
   }
   
-  # round data to specified value of d
-  rounded_status_data <- status_data %>%
-    mutate_at(.vars = c('latitude', 'longitude'), round2, n = num_dec)
-  
-  # get all distinct location tuples for all COVID-19 positive individuals
-  covid_locs <- rounded_status_data %>%
-    filter(status == 1) %>%
-    distinct(latitude, longitude)
-  
-  # get the regions from the rounded data that match the regions visited by the COVID-19 positive individuals
-  # for each distinct region, calculate the LHS of the inference condition (the proportion of individuals with tuples in the region - prior
-  count_props <- match_df(rounded_status_data, covid_locs, on = c('latitude', 'longitude')) %>%
-    group_by(latitude, longitude) %>%
-    summarize(inc_inf = mean(status) - prior, .groups = 'drop')
+  status <- status_data %>% pull(status)
 
-  # calculate the average of the LHS of the inference condition across the regions visited by each individual
-  ind_avg_count_props <- pos_status_data %>%
-    mutate_at(.vars = c('latitude', 'longitude'), round2, n = num_dec) %>% # round data corresponding to positive individuals
-    distinct(patient_id, latitude, longitude) %>% # take the distinct regions visited by each positive individual
-    left_join(count_props, by = c('latitude', 'longitude')) %>% # merge the LHS of inference condition calculated for each region in `count_props`
+  ei <- status_data %>%
+    filter(status==1) %>%
     group_by(patient_id) %>%
-    summarize(avg_inc_inf = mean(inc_inf), .groups = 'drop') %>% # calculate the average across regions for each individual
-    select(avg_inc_inf) %>%
-    mutate(specificity = num_dec) # add variable indicating the number of decimals
-    
-  return(ind_avg_count_props)
-    
+    slice_sample(n=1) %>%
+    ungroup()
+
+  res <- map_dfr(protected_data_sets, function(x) max_post_prob(x, original_data$patient_id, ei, status, prior))
+  
+  res$k <- kvals
+  
+  return(res)
+
 }
 ```
 
-Perform simulation 100 times for Full data for d = 0,1,2,3,4,5 and plot results.
+Perform the simulation 100 times.
 ```{r}
-# inf_count_dists <- map_dfr(0:5, function(y) map_dfr(1:100, function(x) inf_counts(full, y))) %>%
-#   mutate(specificity = factor(specificity, levels = c('0', '1', '2', '3', '4', '5')))
-
-# save(inf_count_dists, file = '../Data/counts_inference_full.RData')
-load('../Data/counts_inference_full.RData')
-
-count_inf_full <- inf_count_dists %>%
-  ggplot(aes(x = specificity, y = avg_inc_inf)) +
-  geom_boxplot() +
-  labs(x = 'Number of decimals',
-       y = 'Individual Level Average of LHS of Condition',
-       title = 'Full Data') +
-  scale_y_continuous(limits = c(-.05, 1), breaks = seq(0, 1, by = .25)) +
-  theme(text = element_text(size = 12.5))
+full_ma_inf <- map_dfr(1:100, function(x) ma_inference_simulation(full, ma_data_sets, ma_k,))
+s_ma_inf <- map_dfr(1:100, function(x) ma_inference_simulation(s_full, mas_data_sets, ma_k))
 ```
 
-Repeat for Seoul.
 ```{r}
-# inf_count_dists_s <- map_dfr(0:5, function(y) map_dfr(1:100, function(x) inf_counts(s_full, y))) %>%
-#   mutate(specificity = factor(specificity, levels = c('0', '1', '2', '3', '4', '5')))
+full_ma_inf <- full_ma_inf %>%
+  group_by(k) %>%
+  mutate(avg_prop_target=mean(prop_target))
+
+s_ma_inf <- s_ma_inf %>%
+  group_by(k) %>%
+  mutate(avg_prop_target=mean(prop_target))
+```
+
+
+Reduce to tidy data and plot.
+```{r}
+# colnames(full_ma_inf) <- ma_k
+# colnames(s_ma_inf) <- ma_k
 # 
-# save(inf_count_dists_s, file = '../Data/counts_inference_seoul.RData')
-load('../Data/counts_inference_seoul.RData')
+# full_ma_inf <- full_ma_inf %>%
+#   gather(key="k", value="Inf_condition")
+# 
+# s_ma_inf <- s_ma_inf %>%
+#   gather(key="k", value="Inf_condition")
+```
 
-count_inf_s <- inf_count_dists_s %>%
-  ggplot(aes(x = specificity, y = avg_inc_inf)) +
+Plot
+```{r fig.width = 10, fig.height = 8}
+full_ma_inf_plot <- full_ma_inf %>%
+  ggplot(aes(x=factor(k, levels=ma_k), y=Inf_condition)) +
   geom_boxplot() +
-  labs(y = '',
-       x = 'Number of decimals',
+  geom_point(aes(x=factor(k, levels=ma_k), y=avg_prop_target), color='red', shape=8, size=2) +
+  labs(x = 'k',
+       y = 'Max Inference Condition Across Positive Individuals',,
+       title = 'Full Data') +
+  scale_x_discrete(limits=rev) +
+  scale_y_continuous(limits = c(-0.01, 1.0), breaks = seq(0, 1.0, by = 0.25))
+  
+
+s_ma_inf_plot <- s_ma_inf %>%
+  ggplot(aes(x=factor(k, levels=ma_k), y=Inf_condition)) +
+  geom_boxplot() +
+  geom_point(aes(x=factor(k, levels=ma_k), y=avg_prop_target), color='red', shape=8, size=2) +
+  labs(x = 'k',
+       y = '',
        title = 'Seoul Only') +
-  scale_y_continuous(limits = c(-.05, 1), breaks = seq(0, 1, by = .25)) +
-  theme(text = element_text(size = 12.5),
-        axis.text.y = element_blank(),
-        axis.ticks.y = element_blank())
+  scale_x_discrete(limits=rev) +
+  theme(axis.text.y = element_blank(),
+        axis.ticks.y = element_blank()) +
+  scale_y_continuous(limits = c(-0.01, 1.0), breaks = seq(0, 1.0, by = 0.25))
+
+(addSmallLegend(i_p) + addSmallLegend(i_p_s)) / (full_ma_inf_plot + s_ma_inf_plot)
 ```
 
-```{r fig.width=11, fig.height=7}
-count_inf_full | count_inf_s
-```
+
 
 ```{r}
-inf_count_dists_s %>%
-  filter(specificity == 1) %>%
-  summarize(m = max(avg_inc_inf))
+
 ```
+
+
+<!-- ### Inference analysis for Counts. -->
+
+<!-- Function to simulate an adversary having access to one location tuple corresponding to individual i and linking that tuple to the count for that tuple in an aggregated counts database to determine the COVID-19 status of that individual. -->
+<!-- ```{r} -->
+<!-- inf_counts <- function(location_data, num_dec, prior = 0.01) { -->
+
+<!--   # dataframe for COVID-19 positive individuals -->
+<!--   pos_status_data <- tibble() -->
+
+<!--   # loop to guarantee we assign some COVID-19 positive individuals in the data -->
+<!--   # simulate 1% of individuals in Y as COVID-19 positive -->
+<!--   while(nrow(pos_status_data) == 0) { -->
+
+<!--     # add covid status to location data -->
+<!--     status_data <- location_data %>%  -->
+<!--       group_by(patient_id) %>% -->
+<!--       mutate(status = sample(c(0, 1), size = 1, prob = c(.99, .01))) %>% -->
+<!--       ungroup() -->
+
+<!--     # data corresponding to covid positive individuals (while loop condition just needs the number of rows > 0) -->
+<!--     pos_status_data <- status_data %>% -->
+<!--       filter(status == 1) -->
+
+<!--   } -->
+
+<!--   # round data to specified value of d -->
+<!--   rounded_status_data <- status_data %>% -->
+<!--     mutate_at(.vars = c('latitude', 'longitude'), round2, n = num_dec) -->
+
+<!--   # get all distinct location tuples for all COVID-19 positive individuals -->
+<!--   covid_locs <- rounded_status_data %>% -->
+<!--     filter(status == 1) %>% -->
+<!--     distinct(latitude, longitude) -->
+
+<!--   # get the regions from the rounded data that match the regions visited by the COVID-19 positive individuals -->
+<!--   # for each distinct region, calculate the LHS of the inference condition (the proportion of individuals with tuples in the region - prior -->
+<!--   count_props <- match_df(rounded_status_data, covid_locs, on = c('latitude', 'longitude')) %>% -->
+<!--     group_by(latitude, longitude) %>% -->
+<!--     summarize(inc_inf = mean(status) - prior, .groups = 'drop') -->
+
+<!--   # calculate the average of the LHS of the inference condition across the regions visited by each individual -->
+<!--   ind_avg_count_props <- pos_status_data %>% -->
+<!--     mutate_at(.vars = c('latitude', 'longitude'), round2, n = num_dec) %>% # round data corresponding to positive individuals -->
+<!--     distinct(patient_id, latitude, longitude) %>% # take the distinct regions visited by each positive individual -->
+<!--     left_join(count_props, by = c('latitude', 'longitude')) %>% # merge the LHS of inference condition calculated for each region in `count_props` -->
+<!--     group_by(patient_id) %>% -->
+<!--     summarize(avg_inc_inf = mean(inc_inf), .groups = 'drop') %>% # calculate the average across regions for each individual -->
+<!--     select(avg_inc_inf) %>% -->
+<!--     mutate(specificity = num_dec) # add variable indicating the number of decimals -->
+
+<!--   return(ind_avg_count_props) -->
+
+<!-- } -->
+<!-- ``` -->
+
+<!-- Perform simulation 100 times for Full data for d = 0,1,2,3,4,5 and plot results. -->
+<!-- ```{r} -->
+<!-- # inf_count_dists <- map_dfr(0:5, function(y) map_dfr(1:100, function(x) inf_counts(full, y))) %>% -->
+<!-- #   mutate(specificity = factor(specificity, levels = c('0', '1', '2', '3', '4', '5'))) -->
+
+<!-- # save(inf_count_dists, file = '../Data/counts_inference_full.RData') -->
+<!-- load('../Data/counts_inference_full.RData') -->
+
+<!-- count_inf_full <- inf_count_dists %>% -->
+<!--   ggplot(aes(x = specificity, y = avg_inc_inf)) + -->
+<!--   geom_boxplot() + -->
+<!--   labs(x = 'Number of decimals', -->
+<!--        y = 'Individual Level Average of LHS of Condition', -->
+<!--        title = 'Full Data') + -->
+<!--   scale_y_continuous(limits = c(-.05, 1), breaks = seq(0, 1, by = .25)) + -->
+<!--   theme(text = element_text(size = 12.5)) -->
+<!-- ``` -->
+
+<!-- Repeat for Seoul. -->
+<!-- ```{r} -->
+<!-- # inf_count_dists_s <- map_dfr(0:5, function(y) map_dfr(1:100, function(x) inf_counts(s_full, y))) %>% -->
+<!-- #   mutate(specificity = factor(specificity, levels = c('0', '1', '2', '3', '4', '5'))) -->
+<!-- #  -->
+<!-- # save(inf_count_dists_s, file = '../Data/counts_inference_seoul.RData') -->
+<!-- load('../Data/counts_inference_seoul.RData') -->
+
+<!-- count_inf_s <- inf_count_dists_s %>% -->
+<!--   ggplot(aes(x = specificity, y = avg_inc_inf)) + -->
+<!--   geom_boxplot() + -->
+<!--   labs(y = '', -->
+<!--        x = 'Number of decimals', -->
+<!--        title = 'Seoul Only') + -->
+<!--   scale_y_continuous(limits = c(-.05, 1), breaks = seq(0, 1, by = .25)) + -->
+<!--   theme(text = element_text(size = 12.5), -->
+<!--         axis.text.y = element_blank(), -->
+<!--         axis.ticks.y = element_blank()) -->
+<!-- ``` -->
+
+<!-- ```{r fig.width=11, fig.height=7} -->
+<!-- count_inf_full | count_inf_s -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- inf_count_dists_s %>% -->
+<!--   filter(specificity == 1) %>% -->
+<!--   summarize(m = max(avg_inc_inf)) -->
+<!-- ``` -->
 
