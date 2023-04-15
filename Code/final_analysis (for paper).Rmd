@@ -935,15 +935,197 @@ s_ma_link_plot <- ma_s_link %>%
 <!-- ``` -->
 
 
-
-
-
 ### Assessing Inference for Trajectories
 
 Function to simulate an adversary having external information location tuples corresponding to COVID-19 positive individuals in a database. The adversary links these external information tuples to all compatible trajectories in Y. The disease status would then be inferred based on the proportion of individuals with compatible trajectories that are COVID-19 positive. This proportion is used to to calculate the left-hand side (LHS) of the inference condition from the paper.
-```{r}
-inference_simulation <- function(loc_data, ci_length, prior = 0.01) {
 
+
+###############################################################################
+###############################################################################
+Not sure if we want to prevent all risks or just look at each individually.
+###############################################################################
+###############################################################################
+
+Perform 500 simulations for each value of d:
+  Perform 100 simulations for each trajectory length:
+  (1) simulate positive COVID-19 status for 1% of individuals
+  (2) sample traj_length points (without replacement) from each trajectory 
+  (3) sample one point from each positive trajectory and treat as EI
+  (4) remove unique records (locations + status)
+  (5) link EI points to trajectories (think about what to do if there is no match)
+  (6) calculate inference
+
+We assume if the adversary does not find a matching tuple, they do not perform
+inference, i.e., the increase in inference is 0.
+
+```{r}
+loc_data <- full %>%
+  mutate_at(.vars=c("latitude", "longitude"), round2, n=1)
+
+traj_length <- 3
+
+prior = 0.01
+```
+
+
+```{r}
+## (1) 
+  
+# number of COVID-19 positive individuals in the database
+pos_status_data <- tibble()
+  
+# loop to guarantee we assign some COVID-19 positive individuals in the data
+# simulate 1% of individuals in Y as COVID-19 positive
+while(nrow(pos_status_data) == 0) {
+  
+  # add covid status to location data
+  status_data <- loc_data %>% 
+    group_by(patient_id) %>%
+    mutate(status = sample(c(0, 1), size = 1, prob = c(.99, .01))) %>%
+    ungroup()
+    
+  # data corresponding to covid positive individuals (while loop condition just needs the number of rows > 0)
+  pos_status_data <- status_data %>%
+    filter(status == 1)
+
+}
+
+## (2)
+  
+# randomly sample 'traj_length' points from each trajectory
+# split into list - each element is a sampled trajectory (patient_id is dropped)
+sampled_data <- status_data %>%
+  group_by(patient_id) %>%
+  slice_sample(n = traj_length) %>%
+  ungroup()
+  
+
+## (3)
+ei <- sampled_data %>%
+  filter(status == 1) %>%
+  select(-status) %>%
+  group_by(patient_id) %>%
+  slice_sample(n=1) %>%
+  group_split(.keep=FALSE)
+
+## (4)
+
+# take 'original' data, split on a per-trajectory basis, and remove
+# unique trajectory/status combinations
+
+sampled_data <- sampled_data %>%
+  group_by(patient_id) %>%
+  group_split()
+
+
+
+is_matched <- lapply(ei, function(y) sapply(sampled_data, function(x) nrow(match_df(y, x, on=c("latitude", "longitude"))) > 0))
+
+max_increase <- max(sapply(is_matched, function(x) mean(sapply(sampled_data[x], function(y) unique(y$status)))))
+```
+
+
+
+
+
+```{r}
+# function takes coarsened data as input
+inference_simulation <- function(loc_data, traj_length, prior = 0.01) {
+  
+  # ## (1) 
+  # 
+  # # number of COVID-19 positive individuals in the database
+  # pos_status_data <- tibble()
+  # 
+  # # loop to guarantee we assign some COVID-19 positive individuals in the data
+  # # simulate 1% of individuals in Y as COVID-19 positive
+  # while(nrow(pos_status_data) == 0) {
+  # 
+  #   # add covid status to location data
+  #   status_data <- loc_data %>% 
+  #     group_by(patient_id) %>%
+  #     mutate(status = sample(c(0, 1), size = 1, prob = c(.99, .01))) %>%
+  #     ungroup()
+  #   
+  #   # data corresponding to covid positive individuals (while loop condition just needs the number of rows > 0)
+  #   pos_status_data <- status_data %>%
+  #     filter(status == 1)
+  # 
+  # }
+  # 
+  # ## (2)
+  # 
+  # # randomly sample 'traj_length' points from each trajectory
+  # # split into list - each element is a sampled trajectory (patient_id is dropped)
+  # sampled_data <- status_data %>%
+  #   group_by(patient_id) %>%
+  #   slice_sample(n = traj_length) %>%
+  #   ungroup()
+  # 
+  # 
+  # ## (3)
+  # ei <- sampled_data %>%
+  #   filter(status == 1) %>%
+  #   group_by(patient_id) %>%
+  #   slice_sample(n=1) %>%
+  #   ungroup()
+  # 
+  # ## (4)
+  # 
+  # # take 'original' data, split on a per-trajectory basis, and remove
+  # # unique trajectory/status combinations
+  # 
+  # sampled_data <- sampled_data[duplicated(sampled_data)]
+  # 
+  # 
+  # 
+  # 
+  # 
+  # 
+  # 
+  # 
+  # 
+  # 
+  # 
+  # 
+  # # sample 'ci_length' tuples from the trajectory of each COVID-19 positive individual
+  # # these tuples will represent the external information available to an adversary
+  # # the sample from each trajectory is a dataframe stored as a list element in 'ext_inf'
+  # ext_inf <- sampled_data %>%
+  #   group_by(patient_id) %>%
+  #   sample_n(size = ci_length) %>%
+  #   group_split()
+  # 
+  # # remove patient id and status from external information samples
+  # ext_inf2 <- lapply(ext_inf, function(x) x %>% select(-patient_id, -status))
+  # 
+  # # summarize each external information dataframe so that it contains one row for each unique external information tuple
+  # # in a given sample - add a variable for how many times each unique tuple occurred in the original sample
+  # ext_inf3 <- lapply(ext_inf2, function(x) x %>% group_by(latitude, longitude) %>% summarize(n = n(), .groups = 'drop'))
+  # 
+  # # extract the tuples from the original full database that match the tuples in the external information samples - perform a similar summary on the matches - create one row for each unique tuple on the basis of `patient_id` with the number of times each tuple occurs in that patient's trajectory
+  # matches <- lapply(ext_inf3, function(y) match_df(status_data, y, on = c('latitude', 'longitude')) %>%
+  #                                         group_by(patient_id, latitude, longitude, status) %>%
+  #                                         summarize(n1 = n(), .groups = 'drop'))
+  # 
+  # # merge the variables for patient_id, disease_status, and the number of times a given tuple occurs in the patient trajectory with the external information samples - we can now compare the number of times tuples occur in the external information sample to the number of times they occur in a patient's trajectory
+  # links <- lapply(1:length(ext_inf3), function(x) left_join(matches[[x]], ext_inf3[[x]], by = c('latitude', 'longitude')))
+  # 
+  # # filter for the patients with trajectories that contain the same unique tuples occurring at least as many times as the original external information sample
+  # links2 <- lapply(1:length(links), function(x) links[[x]] %>% group_by(patient_id) %>% filter(n1 >= n & n() >= nrow(ext_inf3[[x]])) %>% ungroup())
+  # 
+  # # reduce to list of dataframes with patient_ids and COVID-19 status corresponding to the trajectories that were linked to each external information sample
+  # covid_count <- lapply(links2, function(x) distinct(x, patient_id, status))
+  # 
+  # # calculate left hand side of the inference condition for each external information sample
+  # inf_props <- map_dfr(covid_count, function(x) x %>% summarize(cond = mean(status) - prior))
+  # 
+  # # average the left hand side of the inference condition across all COVID-19 positive individuals
+  # max_cond <- inf_props %>% summarize(max_cond = max(cond))
+  # 
+  # return(max_cond)
+  # 
+  
   # number of COVID-19 positive individuals in the database
   pos_status_data <- tibble()
   
@@ -963,42 +1145,40 @@ inference_simulation <- function(loc_data, ci_length, prior = 0.01) {
 
   }
 
-  # sample 'ci_length' tuples from the trajectory of each COVID-19 positive individual
-  # these tuples will represent the external information available to an adversary
-  # the sample from each trajectory is a dataframe stored as a list element in 'ext_inf'
-  ext_inf <- pos_status_data %>%
+  ## (2)
+  
+  # randomly sample 'traj_length' points from each trajectory
+  # split into list - each element is a sampled trajectory (patient_id is dropped)
+  sampled_data <- status_data %>%
     group_by(patient_id) %>%
-    sample_n(size = ci_length) %>%
+    slice_sample(n = traj_length) %>%
+    ungroup()
+  
+
+  ## (3)
+  ei <- sampled_data %>%
+    filter(status == 1) %>%
+    select(-status) %>%
+    group_by(patient_id) %>%
+    slice_sample(n=1) %>%
+    group_split(.keep=FALSE)
+
+  ## (4)
+
+  # take 'original' data, split on a per-trajectory basis, and remove
+  # unique trajectory/status combinations
+
+  sampled_data <- sampled_data %>%
+    group_by(patient_id) %>%
     group_split()
 
-  # remove patient id and status from external information samples
-  ext_inf2 <- lapply(ext_inf, function(x) x %>% select(-patient_id, -status))
 
-  # summarize each external information dataframe so that it contains one row for each unique external information tuple
-  # in a given sample - add a variable for how many times each unique tuple occurred in the original sample
-  ext_inf3 <- lapply(ext_inf2, function(x) x %>% group_by(latitude, longitude) %>% summarize(n = n(), .groups = 'drop'))
 
-  # extract the tuples from the original full database that match the tuples in the external information samples - perform a similar summary on the matches - create one row for each unique tuple on the basis of `patient_id` with the number of times each tuple occurs in that patient's trajectory
-  matches <- lapply(ext_inf3, function(y) match_df(status_data, y, on = c('latitude', 'longitude')) %>%
-                                          group_by(patient_id, latitude, longitude, status) %>%
-                                          summarize(n1 = n(), .groups = 'drop'))
+  is_matched <- lapply(ei, function(y) sapply(sampled_data, function(x) nrow(match_df(y, x, on=c("latitude", "longitude"))) > 0))
 
-  # merge the variables for patient_id, disease_status, and the number of times a given tuple occurs in the patient trajectory with the external information samples - we can now compare the number of times tuples occur in the external information sample to the number of times they occur in a patient's trajectory
-  links <- lapply(1:length(ext_inf3), function(x) left_join(matches[[x]], ext_inf3[[x]], by = c('latitude', 'longitude')))
-
-  # filter for the patients with trajectories that contain the same unique tuples occurring at least as many times as the original external information sample
-  links2 <- lapply(1:length(links), function(x) links[[x]] %>% group_by(patient_id) %>% filter(n1 >= n & n() >= nrow(ext_inf3[[x]])) %>% ungroup())
-
-  # reduce to list of dataframes with patient_ids and COVID-19 status corresponding to the trajectories that were linked to each external information sample
-  covid_count <- lapply(links2, function(x) distinct(x, patient_id, status))
-
-  # calculate left hand side of the inference condition for each external information sample
-  inf_props <- map_dfr(covid_count, function(x) x %>% summarize(cond = mean(status) - prior))
-
-  # average the left hand side of the inference condition across all COVID-19 positive individuals
-  max_cond <- inf_props %>% summarize(max_cond = max(cond))
+  max_increase <- max(sapply(is_matched, function(x) mean(sapply(sampled_data[x], function(y) unique(y$status))) - prior))
   
-  return(max_cond)
+  max_increase <- tibble("max_increase"=max_increase)
   
 }
 ```
@@ -1010,7 +1190,7 @@ inf_calc <- function(location_data, num_dec, nits = 100, sample_sizes = 1:5, pva
   loc_data <- location_data %>%
     mutate_at(.vars = c('latitude', 'longitude'), round2, n = num_dec)
   
-  props <- map_dfc(1:5, function(y) map_dfr(1:100, function(x) inference_simulation(loc_data, y)))
+  props <- map_dfc(sample_sizes, function(y) map_dfr(1:nits, function(x) inference_simulation(loc_data, y)))
   
   colnames(props) <- pvar_names
   
@@ -1023,26 +1203,25 @@ inf_calc <- function(location_data, num_dec, nits = 100, sample_sizes = 1:5, pva
 }
 ```
 
+
 Inference analysis for full data.
 ```{r fig.width=6, fig.height=6}
-# inf_results <- inf_calc(full, 5) %>%
-#   bind_rows(inf_calc(full, 4)) %>%
-#   bind_rows(inf_calc(full, 3)) %>%
-#   bind_rows(inf_calc(full, 2)) %>%
+# inf_results <- inf_calc(full, 2) %>%
 #   bind_rows(inf_calc(full, 1)) %>%
 #   bind_rows(inf_calc(full, 0))
 # 
 # save(inf_results, file = '../Data/inf_results_trajectories_full.RData')
+
 load('../Data/inf_results_trajectories_full.RData')
 
 i_p <- inf_results %>%
-  mutate(specificity = factor(specificity, levels = c('0', '1', '2', '3', '4', '5')),
+  mutate(specificity = factor(specificity, levels = c('0', '1', '2')),
          num_points = factor(num_points, levels = c('one', 'two', 'three', 'four', 'five'))) %>%
   ggplot(aes(x = specificity, y = inf_prop, fill = factor(num_points))) +
   geom_boxplot(position = position_dodge(width = 0.5)) +
   labs(x = 'Number of decimals d',
        y = 'Max Inference Condition Across Positive Individuals',
-       fill = '# EI Tuples\n',
+       fill = '# Tuples\n',
        title = 'Full Data') +
   scale_fill_discrete(labels = c('One', 'Two', 'Three', 'Four', 'Five'),
                       guide = guide_legend(reverse = TRUE)) +
@@ -1056,24 +1235,22 @@ addSmallLegend(i_p)
 
 Inference analysis for Seoul data.
 ```{r fig.width=6, fig.height=6}
-# inf_results_s <- inf_calc(s_full, 5) %>%
-#   bind_rows(inf_calc(s_full, 4)) %>%
-#   bind_rows(inf_calc(s_full, 3)) %>%
-#   bind_rows(inf_calc(s_full, 2)) %>%
+# inf_results_s <- inf_calc(s_full, 2) %>%
 #   bind_rows(inf_calc(s_full, 1)) %>%
 #   bind_rows(inf_calc(s_full, 0))
 # 
 # save(inf_results_s, file = '../Data/inf_results_trajectories_seoul.RData')
+
 load(file = '../Data/inf_results_trajectories_seoul.RData')
 
 i_p_s <- inf_results_s %>%
-  mutate(specificity = factor(specificity, levels = c('0', '1', '2', '3', '4', '5')),
+  mutate(specificity = factor(specificity, levels = c('0', '1', '2')),
          num_points = factor(num_points, levels = c('one', 'two', 'three', 'four', 'five'))) %>%
   ggplot(aes(x = specificity, y = inf_prop, fill = factor(num_points))) +
   geom_boxplot(position = position_dodge(width = 0.5)) +
   labs(x = 'Number of decimals d',
        y = '',
-       fill = '# EI Tuples\n',
+       fill = '# Tuples\n',
        title = 'Seoul Only') +
   scale_fill_discrete(labels = c('One', 'Two', 'Three', 'Four', 'Five'),
                       guide = guide_legend(reverse = TRUE)) +
@@ -1105,41 +1282,53 @@ probability is the proportion of matched points with COVID-19 status = 1.
 
 (1) Assign 1% of individuals a positive covid-19 status.
 ```{r}
-# number of COVID-19 positive individuals in the database
-pos_status_data <- tibble()
-  
-# loop to guarantee we assign some COVID-19 positive individuals in the data
-# simulate 1% of individuals in Y as COVID-19 positive
-while(nrow(pos_status_data) == 0) {
-  
-  # add covid status to location data
-  status_data <- full %>% 
-    group_by(patient_id) %>%
-    mutate(status = sample(c(0, 1), size = 1, prob = c(.99, .01))) %>%
-    ungroup()
-    
-  # data corresponding to covid positive individuals (while loop condition just needs the number of rows > 0)
-  pos_status_data <- status_data %>%
-    filter(status == 1)
-
-}
+# # number of COVID-19 positive individuals in the database
+# pos_status_data <- tibble()
+#   
+# # loop to guarantee we assign some COVID-19 positive individuals in the data
+# # simulate 1% of individuals in Y as COVID-19 positive
+# while(nrow(pos_status_data) == 0) {
+#   
+#   # add covid status to location data
+#   status_data <- full %>% 
+#     group_by(patient_id) %>%
+#     mutate(status = sample(c(0, 1), size = 1, prob = c(.99, .01))) %>%
+#     ungroup()
+#     
+#   # data corresponding to covid positive individuals (while loop condition just needs the number of rows > 0)
+#   pos_status_data <- status_data %>%
+#     filter(status == 1)
+# 
+# }
 ```
 
 
 (2) Remove longitudinal links (conceptual)
 (3) Sample a location tuple from the trajectory of each covid-positive person.
 ```{r}
-status <- status_data %>% pull(status)
-
-ei <- status_data %>%
-  filter(status==1) %>%
-  group_by(patient_id) %>%
-  slice_sample(n=1) %>%
-  ungroup() %>%
-  select(latitude, longitude)
-
-ei
+# status <- status_data %>% pull(status)
+# 
+# ei <- status_data %>%
+#   filter(status==1) %>%
+#   group_by(patient_id) %>%
+#   slice_sample(n=1) %>%
+#   ungroup() %>%
+#   select(latitude, longitude)
 ```
+
+```{r}
+# protected_data <- ma_data_sets[[1]]
+# ids <- full$patient_id
+# 
+# # add status to locations for probability computation later
+# ds <- protected_data %>% mutate(status=status, pid=ids)
+# 
+# ds %>%
+#   group_by(latitude, longitude, status) %>%
+#   mutate(n=n()) %>%
+#   filter(n >= 2)
+```
+
 
 For each protected data set, compute the posterior probability of inference for each EI tuple.
 ```{r}
@@ -1148,11 +1337,16 @@ max_post_prob <- function(protected_data, ids, ei_tuples, disease_status, prior)
   # add status to locations for probability computation later
   ds <- protected_data %>% mutate(status=disease_status, pid=ids)
   
-  # select just latitude and longitude for the tree
-  # tree_data <- ds %>% select(latitude, longitude)
+  # remove unique records
+  ds <- ds %>%
+    group_by(latitude, longitude, status) %>%
+    mutate(n=n()) %>%
+    ungroup() %>%
+    filter(n >= 2) %>%
+    select(latitude, longitude, status, pid)
   
   # get indexes of the nearest neighbor to each point
-  neighbor_indexes <- get.knnx(data=protected_data[,c('latitude', 'longitude')], query=ei_tuples[,c('latitude', 'longitude')], k=1, algorithm="kd_tree")$nn.index
+  neighbor_indexes <- get.knnx(data=ds[,c('latitude', 'longitude')], query=ei_tuples[,c('latitude', 'longitude')], k=1, algorithm="kd_tree")$nn.index
   
   # calculate posterior probability
   posterior_probs <- c()
@@ -1224,8 +1418,14 @@ ma_inference_simulation <- function(original_data, protected_data_sets, kvals, p
 
 Perform the simulation 100 times.
 ```{r}
-full_ma_inf <- map_dfr(1:100, function(x) ma_inference_simulation(full, ma_data_sets, ma_k,))
-s_ma_inf <- map_dfr(1:100, function(x) ma_inference_simulation(s_full, mas_data_sets, ma_k))
+# full_ma_inf <- map_dfr(1:100, function(x) ma_inference_simulation(full, ma_data_sets, ma_k))
+# s_ma_inf <- map_dfr(1:100, function(x) ma_inference_simulation(s_full, mas_data_sets, ma_k))
+# 
+# save(full_ma_inf, file = '../Data/inf_results_ma_full.RData')
+# save(s_ma_inf, file = '../Data/inf_results_ma_s.RData')
+
+load('../Data/inf_results_ma_full.RData')
+load('../Data/inf_results_ma_s.RData')
 ```
 
 ```{r}
@@ -1238,18 +1438,6 @@ s_ma_inf <- s_ma_inf %>%
   mutate(avg_prop_target=mean(prop_target))
 ```
 
-
-Reduce to tidy data and plot.
-```{r}
-# colnames(full_ma_inf) <- ma_k
-# colnames(s_ma_inf) <- ma_k
-# 
-# full_ma_inf <- full_ma_inf %>%
-#   gather(key="k", value="Inf_condition")
-# 
-# s_ma_inf <- s_ma_inf %>%
-#   gather(key="k", value="Inf_condition")
-```
 
 Plot
 ```{r fig.width = 10, fig.height = 8}
@@ -1281,9 +1469,6 @@ s_ma_inf_plot <- s_ma_inf %>%
 
 
 
-```{r}
-
-```
 
 
 <!-- ### Inference analysis for Counts. -->
